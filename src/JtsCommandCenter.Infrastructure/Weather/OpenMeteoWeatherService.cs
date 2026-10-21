@@ -1,9 +1,12 @@
 using System.Globalization;
+using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using JtsCommandCenter.Core.Weather;
 
-namespace JtsCommandCenter.Web.Services.Weather;
+namespace JtsCommandCenter.Infrastructure.Weather;
 
 /// <summary>Weather from the free Open-Meteo forecast API (no API key required).</summary>
 public sealed class OpenMeteoWeatherService(

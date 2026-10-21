@@ -2,10 +2,12 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using static JtsCommandCenter.Web.Services.Sports.EspnJson;
+using JtsCommandCenter.Core.Sports;
+using static JtsCommandCenter.Infrastructure.Sports.EspnJson;
 
-namespace JtsCommandCenter.Web.Services.Sports;
+namespace JtsCommandCenter.Infrastructure.Sports;
 
 /// <summary>
 /// Team schedules from ESPN's public site API (site.api.espn.com, no API key). The API is undocumented

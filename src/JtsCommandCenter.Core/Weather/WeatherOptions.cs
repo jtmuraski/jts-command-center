@@ -1,4 +1,4 @@
-namespace JtsCommandCenter.Web.Services.Weather;
+namespace JtsCommandCenter.Core.Weather;
 
 /// <summary>Settings bound from the "Weather" section of appsettings.json.</summary>
 public sealed class WeatherOptions

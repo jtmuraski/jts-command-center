@@ -1,4 +1,4 @@
-namespace JtsCommandCenter.Web.Services.Sports;
+namespace JtsCommandCenter.Core.Sports;
 
 public interface ISportsService
 {

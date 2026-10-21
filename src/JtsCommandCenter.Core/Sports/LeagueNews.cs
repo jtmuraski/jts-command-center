@@ -1,4 +1,4 @@
-namespace JtsCommandCenter.Web.Services.Sports;
+namespace JtsCommandCenter.Core.Sports;
 
 /// <param name="Summary">Plain-text teaser, when the source provides one.</param>
 public sealed record NewsArticle(string Title, string Url, string Source, DateTimeOffset Published, string? Summary);

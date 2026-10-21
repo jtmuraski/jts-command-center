@@ -1,6 +1,7 @@
 using System.Text.Json;
+using JtsCommandCenter.Core.Sports;
 
-namespace JtsCommandCenter.Web.Services.Sports;
+namespace JtsCommandCenter.Infrastructure.Sports;
 
 /// <summary>Small helpers for reading ESPN's loosely-shaped JSON, shared by the ESPN-backed services.</summary>
 internal static class EspnJson

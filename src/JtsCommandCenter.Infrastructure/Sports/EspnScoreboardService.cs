@@ -1,10 +1,12 @@
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using static JtsCommandCenter.Web.Services.Sports.EspnJson;
+using JtsCommandCenter.Core.Sports;
+using static JtsCommandCenter.Infrastructure.Sports.EspnJson;
 
-namespace JtsCommandCenter.Web.Services.Sports;
+namespace JtsCommandCenter.Infrastructure.Sports;
 
 /// <summary>Weekly league scoreboards from ESPN's public site API (no API key).</summary>
 public sealed class EspnScoreboardService(

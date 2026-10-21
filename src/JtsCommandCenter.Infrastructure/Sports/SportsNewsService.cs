@@ -5,10 +5,12 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using static JtsCommandCenter.Web.Services.Sports.EspnJson;
+using JtsCommandCenter.Core.Sports;
+using static JtsCommandCenter.Infrastructure.Sports.EspnJson;
 
-namespace JtsCommandCenter.Web.Services.Sports;
+namespace JtsCommandCenter.Infrastructure.Sports;
 
 /// <summary>
 /// League and team news merged from ESPN's news API and plain RSS 2.0 / Atom feeds. ESPN's team filter on

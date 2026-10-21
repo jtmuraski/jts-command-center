@@ -20,8 +20,16 @@ Guidance for Claude Code when working in this repository.
 ```
 JtsCommandCenter.slnx            Solution (new XML .slnx format)
 global.json                      Pins the .NET SDK
+Directory.Build.props            Shared settings for every project (net10.0, nullable, implicit usings)
 src/
-  JtsCommandCenter.Web/          Blazor Web App (UI + server)
+  JtsCommandCenter.Core/         Domain models, service interfaces, options classes, pure logic (no I/O, no packages)
+    Weather/                     IWeatherService, WeatherReport, WeatherOptions, WeatherCondition
+    Sports/                      ISportsService, IScoreboardService, ISportsNewsService, models, options, ScheduleMath
+  JtsCommandCenter.Infrastructure/  Implementations that call external services, plus DI registration
+    ServiceCollectionExtensions.cs  AddWeather / AddSports (typed HttpClients, options binding, memory cache)
+    Weather/                     OpenMeteoWeatherService, WMO code mapping
+    Sports/                      ESPN schedule/scoreboard services, RSS/Atom news service, EspnJson helpers
+  JtsCommandCenter.Web/          Blazor Web App (UI + startup only)
     Components/
       App.razor                  HTML shell, head, scripts
       Routes.razor               Router
@@ -30,11 +38,13 @@ src/
       SportsCenter/              Sports Center components (ScoreboardCard, NewsList)
       Dashboard/                 Dashboard cards (Weather, Todo, Projects, Sports, News)
       Shared/                    Reusable components (DashboardCard wrapper, WeatherIcon)
-    Services/
-      Weather/                   IWeatherService + Open-Meteo implementation, options, WMO code mapping
-      Sports/                    ESPN team schedules (dashboard card), weekly scoreboards, merged news feeds
     wwwroot/app.css              Global theme: color tokens + base styles
+tests/
+  JtsCommandCenter.Tests/        xUnit tests for Core logic and Infrastructure services
+    Support/                     FakeHttpHandler (canned HTTP responses) and ESPN JSON fixtures
 ```
+
+Dependencies point inward: Web → Infrastructure → Core, and Web → Core. Core references nothing.
 
 ## Common commands
 
@@ -42,6 +52,7 @@ Run from the repository root:
 
 ```bash
 dotnet build
+dotnet test
 dotnet watch --project src/JtsCommandCenter.Web
 dotnet run --project src/JtsCommandCenter.Web
 ```
@@ -60,7 +71,7 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 - Component-specific styles go in a scoped `Component.razor.css` file next to the component. Use `::deep` when styling child components (e.g. `NavLink`).
 - Layout must stay responsive: below 900px the sidebar becomes an off-canvas drawer toggled from the top bar.
 - Dashboard (`Pages/Home.razor`) uses CSS grid areas: 1 column on phones (to-do first), 2 columns from 720px, 3 columns from 1200px. New cards wrap their content in `<DashboardCard Title="...">` and get a grid area in `Home.razor.css`.
-- Dashboard cards other than Weather and Sports still use hard-coded placeholder data in their `@code` blocks. When wiring real data, move it behind an injected service (Weather is the reference pattern).
+- Dashboard cards other than Weather and Sports still use hard-coded placeholder data in their `@code` blocks. When wiring real data, add the interface and models to Core, the implementation to Infrastructure, and inject the interface (Weather is the reference pattern).
 - New sections get a link in `Components/Layout/NavMenu.razor` (group under a `nav-section` heading).
 
 ## Integrations
@@ -71,8 +82,14 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 
 ## Code conventions
 
-- Nullable reference types and implicit usings are enabled.
-- Keep pages thin: put business logic in services registered in `Program.cs` and inject them.
+- Nullable reference types and implicit usings are enabled (set once in `Directory.Build.props`).
+- Keep pages thin: components inject Core interfaces (`IWeatherService`, `ISportsService`, ...), never Infrastructure classes.
+- Where new code goes:
+  - Models, interfaces, options classes and pure logic go in **Core**. Core takes no package or framework dependencies.
+  - Anything that does I/O (HTTP APIs, feeds, and later the database/EF Core) goes in **Infrastructure**. It is registered through an `Add<Feature>(IConfiguration)` extension in `ServiceCollectionExtensions.cs`, which `Program.cs` calls.
+  - UI goes in **Web**.
+- Infrastructure classes that are only used internally can be `internal`; `InternalsVisibleTo` exposes them to the test project.
+- Tests: every Core logic class and Infrastructure service gets tests. Services are tested against canned responses via `FakeHttpHandler`, so tests never hit the network. Use `MemoryCache`, `Options.Create`, and `NullLogger<T>.Instance` for the other dependencies.
 
 ## Open decisions / roadmap
 

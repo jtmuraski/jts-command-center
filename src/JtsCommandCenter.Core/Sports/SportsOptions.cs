@@ -1,4 +1,4 @@
-namespace JtsCommandCenter.Web.Services.Sports;
+namespace JtsCommandCenter.Core.Sports;
 
 /// <summary>Settings bound from the "Sports" section of appsettings.json.</summary>
 public sealed class SportsOptions

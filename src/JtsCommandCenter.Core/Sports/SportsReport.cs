@@ -1,4 +1,4 @@
-namespace JtsCommandCenter.Web.Services.Sports;
+namespace JtsCommandCenter.Core.Sports;
 
 /// <summary>How a team's section is laid out on the card.</summary>
 public enum SportsDisplay

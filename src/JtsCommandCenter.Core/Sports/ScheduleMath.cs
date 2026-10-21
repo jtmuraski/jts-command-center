@@ -1,4 +1,4 @@
-namespace JtsCommandCenter.Web.Services.Sports;
+namespace JtsCommandCenter.Core.Sports;
 
 /// <summary>Pure schedule logic (no I/O), kept separate so it's easy to reason about and test.</summary>
 public static class ScheduleMath

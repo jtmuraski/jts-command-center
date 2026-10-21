@@ -1,4 +1,4 @@
-namespace JtsCommandCenter.Web.Services.Sports;
+namespace JtsCommandCenter.Core.Sports;
 
 /// <summary>One page of the league calendar, e.g. regular season week 7 or the Wild Card round.</summary>
 /// <param name="SeasonType">ESPN season type: 1 preseason, 2 regular season, 3 postseason.</param>
