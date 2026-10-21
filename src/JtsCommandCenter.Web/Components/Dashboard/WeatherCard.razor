@@ -18,6 +18,34 @@
                 <WeatherIcon Condition="report.Current.Condition" IsNight="!report.Current.IsDay" Size="84" />
             </div>
 
+            <dl class="stats">
+                <div>
+                    <dt>Feels like</dt>
+                    <dd>@report.Current.FeelsLike°</dd>
+                </div>
+                <div>
+                    <dt>Wind</dt>
+                    <dd>
+                        @report.Current.WindDirection @report.Current.WindSpeed <small>@report.WindUnit</small>
+                        <span class="sub">Gusts @report.Current.WindGust</span>
+                    </dd>
+                </div>
+                <div>
+                    <dt>Humidity</dt>
+                    <dd>@report.Current.Humidity%</dd>
+                </div>
+                <div>
+                    <dt>Precip today</dt>
+                    <dd>
+                        @(report.Current.PrecipitationChance is int chance ? $"{chance}%" : "–")
+                        @if (FormatSnow(report.Current.Snowfall) is string snow)
+                        {
+                            <span class="sub">@snow @report.SnowUnit snow</span>
+                        }
+                    </dd>
+                </div>
+            </dl>
+
             <ul class="forecast">
                 @foreach (var day in report.Forecast)
                 {
@@ -26,9 +54,27 @@
                         <WeatherIcon Condition="day.Condition" Size="30" />
                         <span class="high">@day.High°</span>
                         <span class="low">@day.Low°</span>
+                        <span class="precip" title="Chance of precipitation">
+                            @(day.PrecipitationChance is int dayChance ? $"{dayChance}%" : "–")
+                        </span>
+                        @if (FormatSnow(day.Snowfall) is string daySnow)
+                        {
+                            <span class="snow" title="Expected snowfall">@daySnow @report.SnowUnit</span>
+                        }
                     </li>
                 }
             </ul>
+
+            <div class="sun">
+                <span>
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 4v5M9 7l3-3 3 3" /></svg>
+                    Sunrise @report.Current.Sunrise.ToString("h:mm tt")
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 4v5M9 6l3 3 3-3" /></svg>
+                    Sunset @report.Current.Sunset.ToString("h:mm tt")
+                </span>
+            </div>
 
             <div class="footer">
                 @if (error is not null)
@@ -67,6 +113,14 @@
     private bool loading;
 
     private string Unit => Options.Value.TemperatureUnit.StartsWith("c", StringComparison.OrdinalIgnoreCase) ? "C" : "F";
+
+    /// <summary>Formats a snowfall amount for display, or null when there's no meaningful snow.</summary>
+    private static string? FormatSnow(double amount) => amount switch
+    {
+        < 0.1 => null,
+        < 10 => amount.ToString("0.#"),
+        _ => amount.ToString("0")
+    };
 
     protected override Task OnInitializedAsync() => LoadAsync();
 

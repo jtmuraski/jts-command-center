@@ -43,4 +43,13 @@ public static class WeatherCodes
         96 or 99 => "Thunderstorms with Hail",
         _ => "Unknown"
     };
+
+    private static readonly string[] CompassPoints = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+
+    /// <summary>Converts a wind direction in degrees (direction the wind comes from) to an 8-point compass label.</summary>
+    public static string ToCompass(double degrees)
+    {
+        var normalized = ((degrees % 360) + 360) % 360;
+        return CompassPoints[(int)Math.Round(normalized / 45) % 8];
+    }
 }

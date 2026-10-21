@@ -12,6 +12,12 @@ public sealed class WeatherOptions
     /// <summary>"fahrenheit" or "celsius", passed straight through to Open-Meteo.</summary>
     public string TemperatureUnit { get; set; } = "fahrenheit";
 
+    /// <summary>"mph", "kmh", "ms", or "kn", passed straight through to Open-Meteo.</summary>
+    public string WindSpeedUnit { get; set; } = "mph";
+
+    /// <summary>"inch" or "mm". With "mm", Open-Meteo reports snowfall in centimeters.</summary>
+    public string PrecipitationUnit { get; set; } = "inch";
+
     /// <summary>Number of upcoming days shown in the forecast row (not counting today).</summary>
     public int ForecastDays { get; set; } = 5;
 
