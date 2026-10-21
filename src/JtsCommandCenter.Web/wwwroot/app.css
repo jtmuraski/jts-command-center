@@ -1,0 +1,211 @@
+/* ==========================================================================
+   JT's Command Center: global theme
+   Dark navy / chalkboard palette with muted accents. All colors live here as
+   tokens; components should reference the variables rather than raw hex.
+   ========================================================================== */
+
+:root {
+    color-scheme: dark;
+
+    /* Surfaces */
+    --cc-bg: #13161b;              /* chalkboard black */
+    --cc-bg-texture: #171c24;
+    --cc-surface: #1a1f27;
+    --cc-surface-raised: #212835;
+    --cc-sidebar: #0f1826;         /* deep navy */
+    --cc-sidebar-active: #1b2a40;
+    --cc-border: #2a3240;
+    --cc-border-subtle: #222934;
+
+    /* Text */
+    --cc-text: #d5d9df;
+    --cc-text-strong: #eceef1;
+    --cc-text-muted: #8a93a1;
+    --cc-text-faint: #5f6876;
+
+    /* Brand / accents (muted) */
+    --cc-primary: #3e5c82;         /* steel blue */
+    --cc-primary-hover: #4a6a93;
+    --cc-primary-soft: rgba(62, 92, 130, 0.18);
+    --cc-accent: #6f9493;          /* slate teal */
+    --cc-accent-2: #a8916b;        /* worn brass */
+    --cc-accent-3: #8a7ca0;        /* dusty violet */
+
+    /* Status (muted) */
+    --cc-success: #6a8c6f;
+    --cc-warning: #b0955a;
+    --cc-danger: #a05a5a;
+    --cc-info: #5f7f9e;
+
+    /* Shape & type */
+    --cc-radius-sm: 4px;
+    --cc-radius: 8px;
+    --cc-radius-lg: 12px;
+    --cc-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.25);
+    --cc-font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --cc-font-mono: "Cascadia Code", Consolas, "SFMono-Regular", Menlo, monospace;
+
+    --cc-sidebar-width: 240px;
+    --cc-topbar-height: 56px;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+body {
+    background-color: var(--cc-bg);
+    background-image: radial-gradient(circle at 30% 0%, var(--cc-bg-texture) 0%, var(--cc-bg) 55%);
+    background-attachment: fixed;
+    color: var(--cc-text);
+    font-family: var(--cc-font);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--cc-text-strong);
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 0 0 0.5rem;
+}
+
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.3rem; }
+h3 { font-size: 1.1rem; }
+
+h1:focus {
+    outline: none;
+}
+
+p {
+    margin: 0 0 1rem;
+}
+
+a {
+    color: var(--cc-accent);
+    text-decoration: none;
+}
+
+    a:hover {
+        color: var(--cc-text-strong);
+    }
+
+code, pre {
+    font-family: var(--cc-font-mono);
+    background: var(--cc-surface-raised);
+    border-radius: var(--cc-radius-sm);
+    padding: 0.1em 0.35em;
+}
+
+::selection {
+    background: var(--cc-primary);
+    color: var(--cc-text-strong);
+}
+
+* {
+    scrollbar-color: var(--cc-border) transparent;
+    scrollbar-width: thin;
+}
+
+/* --------------------------------------------------------------------------
+   Reusable building blocks
+   -------------------------------------------------------------------------- */
+
+.cc-card {
+    background: var(--cc-surface);
+    border: 1px solid var(--cc-border-subtle);
+    border-radius: var(--cc-radius-lg);
+    padding: 1.25rem;
+    box-shadow: var(--cc-shadow);
+}
+
+.cc-muted {
+    color: var(--cc-text-muted);
+}
+
+.cc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid transparent;
+    border-radius: var(--cc-radius);
+    padding: 0.45rem 0.95rem;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--cc-text-strong);
+    background: var(--cc-primary);
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+    .cc-btn:hover {
+        background: var(--cc-primary-hover);
+        color: var(--cc-text-strong);
+    }
+
+    .cc-btn:focus-visible {
+        outline: 2px solid var(--cc-accent);
+        outline-offset: 2px;
+    }
+
+.cc-btn-ghost {
+    background: transparent;
+    border-color: var(--cc-border);
+    color: var(--cc-text);
+}
+
+    .cc-btn-ghost:hover {
+        background: var(--cc-surface-raised);
+    }
+
+input, select, textarea {
+    font: inherit;
+    color: var(--cc-text);
+    background: var(--cc-bg);
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius);
+    padding: 0.45rem 0.65rem;
+}
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--cc-primary-hover);
+        box-shadow: 0 0 0 3px var(--cc-primary-soft);
+    }
+
+/* --------------------------------------------------------------------------
+   Blazor validation + error boundary (re-themed from template defaults)
+   -------------------------------------------------------------------------- */
+
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid var(--cc-success);
+}
+
+.invalid {
+    outline: 1px solid var(--cc-danger);
+}
+
+.validation-message {
+    color: var(--cc-danger);
+    font-size: 0.875rem;
+}
+
+.blazor-error-boundary {
+    background: var(--cc-danger);
+    border-radius: var(--cc-radius);
+    padding: 1rem;
+    color: var(--cc-text-strong);
+}
+
+    .blazor-error-boundary::after {
+        content: "An error has occurred.";
+    }

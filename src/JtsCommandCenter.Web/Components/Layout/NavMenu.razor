@@ -1,0 +1,14 @@
+<nav class="nav">
+    <div class="nav-section">Overview</div>
+    <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="OnNavigate">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z" />
+        </svg>
+        Dashboard
+    </NavLink>
+</nav>
+
+@code {
+    /// <summary>Raised when a link is clicked so the layout can close the mobile drawer.</summary>
+    [Parameter] public EventCallback OnNavigate { get; set; }
+}

@@ -1,0 +1,21 @@
+.page-header {
+    margin-bottom: 1.75rem;
+}
+
+.tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+    .tiles p {
+        margin: 0;
+    }
+
+.tile-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-bottom: 0.75rem;
+}

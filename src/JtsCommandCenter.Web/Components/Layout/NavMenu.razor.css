@@ -1,0 +1,48 @@
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 1rem 0.75rem;
+    overflow-y: auto;
+}
+
+.nav-section {
+    color: var(--cc-text-faint);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.75rem 0.65rem 0.4rem;
+}
+
+.nav ::deep .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: var(--cc-radius);
+    color: var(--cc-text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+    .nav ::deep .nav-link svg {
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        stroke-linejoin: round;
+    }
+
+    .nav ::deep .nav-link:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--cc-text);
+    }
+
+    .nav ::deep .nav-link.active {
+        background: var(--cc-sidebar-active);
+        color: var(--cc-text-strong);
+        box-shadow: inset 3px 0 0 var(--cc-accent);
+    }

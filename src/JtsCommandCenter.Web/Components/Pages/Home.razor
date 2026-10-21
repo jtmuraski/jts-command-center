@@ -1,0 +1,35 @@
+﻿@page "/"
+
+<PageTitle>Dashboard · Command Center</PageTitle>
+
+<header class="page-header">
+    <h1>@Greeting</h1>
+    <p class="cc-muted">Everything in one place. Modules will appear here as they're built.</p>
+</header>
+
+<section class="tiles">
+    <article class="cc-card tile">
+        <span class="tile-dot" style="background: var(--cc-accent)"></span>
+        <h3>Professional</h3>
+        <p class="cc-muted">Work projects, tasks, and notes.</p>
+    </article>
+    <article class="cc-card tile">
+        <span class="tile-dot" style="background: var(--cc-accent-2)"></span>
+        <h3>Personal</h3>
+        <p class="cc-muted">Home, finances, goals, and errands.</p>
+    </article>
+    <article class="cc-card tile">
+        <span class="tile-dot" style="background: var(--cc-accent-3)"></span>
+        <h3>Schedule</h3>
+        <p class="cc-muted">Upcoming events and reminders.</p>
+    </article>
+</section>
+
+@code {
+    private static string Greeting => DateTime.Now.Hour switch
+    {
+        < 12 => "Good morning",
+        < 17 => "Good afternoon",
+        _ => "Good evening"
+    };
+}

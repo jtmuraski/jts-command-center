@@ -1,0 +1,147 @@
+.shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ---- Sidebar ---- */
+.sidebar {
+    width: var(--cc-sidebar-width);
+    flex-shrink: 0;
+    background: var(--cc-sidebar);
+    border-right: 1px solid var(--cc-border-subtle);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    height: var(--cc-topbar-height);
+    padding: 0 1.25rem;
+    border-bottom: 1px solid var(--cc-border-subtle);
+}
+
+.brand-mark {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    background: var(--cc-accent);
+    box-shadow: 0 0 0 3px rgba(111, 148, 147, 0.2);
+}
+
+.brand-name {
+    color: var(--cc-text-strong);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* ---- Main column ---- */
+.main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar {
+    height: var(--cc-topbar-height);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--cc-border-subtle);
+    background: rgba(19, 22, 27, 0.85);
+    backdrop-filter: blur(6px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.topbar-date {
+    margin-left: auto;
+    color: var(--cc-text-muted);
+    font-size: 0.9rem;
+}
+
+.nav-toggle {
+    display: none;
+    background: transparent;
+    border: 0;
+    color: var(--cc-text);
+    padding: 0.25rem;
+    border-radius: var(--cc-radius-sm);
+    cursor: pointer;
+}
+
+    .nav-toggle:hover {
+        background: var(--cc-surface-raised);
+    }
+
+.content {
+    flex: 1;
+    padding: 1.75rem 2rem 3rem;
+    max-width: 1400px;
+    width: 100%;
+}
+
+.scrim {
+    display: none;
+}
+
+/* ---- Tablet / narrow: off-canvas sidebar ---- */
+@media (max-width: 900px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        z-index: 30;
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+    }
+
+    .nav-open .sidebar {
+        transform: translateX(0);
+    }
+
+    .nav-open .scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 20;
+    }
+
+    .nav-toggle {
+        display: inline-flex;
+    }
+
+    .content {
+        padding: 1.25rem 1rem 2.5rem;
+    }
+}
+
+/* ---- Blazor unhandled-error bar ---- */
+#blazor-error-ui {
+    background: var(--cc-surface-raised);
+    color: var(--cc-text);
+    border-top: 2px solid var(--cc-danger);
+    bottom: 0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.4);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
