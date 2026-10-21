@@ -1,0 +1,53 @@
+<DashboardCard Title="Projects">
+    <HeaderContent>@(workProjects.Length + personalProjects.Length) active</HeaderContent>
+    <ChildContent>
+        <h3 class="group">Work</h3>
+        <ul class="projects">
+            @foreach (var project in workProjects)
+            {
+                <li>
+                    <div class="row">
+                        <span class="name">@project.Name</span>
+                        <span class="meta">@project.Percent%</span>
+                    </div>
+                    <div class="bar"><div class="fill work" style="width: @(project.Percent)%"></div></div>
+                </li>
+            }
+        </ul>
+
+        <h3 class="group">Personal</h3>
+        <ul class="projects">
+            @foreach (var project in personalProjects)
+            {
+                <li>
+                    <div class="row">
+                        <span class="name">@project.Name</span>
+                        <span class="meta">@project.OpenTasks tasks left</span>
+                    </div>
+                    <div class="bar"><div class="fill personal" style="width: @(project.Percent)%"></div></div>
+                </li>
+            }
+        </ul>
+
+        <a class="cc-btn cc-btn-ghost view-all" href="" aria-disabled="true">View project boards</a>
+    </ChildContent>
+</DashboardCard>
+
+@code {
+    // Placeholder data until projects are stored.
+    private readonly Project[] workProjects =
+    [
+        new("Client Website Redesign", 72, 6),
+        new("Database Migration", 58, 9),
+        new("Reporting Cleanup", 35, 14),
+    ];
+
+    private readonly Project[] personalProjects =
+    [
+        new("Home Automation", 70, 10),
+        new("Garage Cleanup", 45, 3),
+        new("Ice Fishing Prep", 20, 7),
+    ];
+
+    private sealed record Project(string Name, int Percent, int OpenTasks);
+}

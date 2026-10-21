@@ -1,0 +1,27 @@
+<svg class="wx-icon" viewBox="0 0 48 48" width="@Size" height="@Size" aria-hidden="true">
+    @if (Condition is WeatherCondition.Sunny or WeatherCondition.PartlyCloudy)
+    {
+        <g class="wx-sun">
+            <circle cx="30" cy="18" r="7" />
+            <path d="M30 5v3M30 28v3M17 18h3M40 18h3M20.8 8.8l2.1 2.1M37.1 25.1l2.1 2.1M20.8 27.2l2.1-2.1M37.1 10.9l2.1-2.1" />
+        </g>
+    }
+    @if (Condition is not WeatherCondition.Sunny)
+    {
+        <path class="wx-cloud" d="M14 38h20a7 7 0 0 0 0-14 10 10 0 0 0-19.2 2.6A5.7 5.7 0 0 0 14 38z" />
+    }
+    @if (Condition is WeatherCondition.Rain)
+    {
+        <path class="wx-rain" d="M18 42l-1.5 3M25 42l-1.5 3M32 42l-1.5 3" />
+    }
+    @if (Condition is WeatherCondition.Snow)
+    {
+        <path class="wx-snow" d="M18 43h.01M25 45h.01M32 43h.01" />
+    }
+</svg>
+
+@code {
+    [Parameter] public WeatherCondition Condition { get; set; }
+
+    [Parameter] public int Size { get; set; } = 32;
+}

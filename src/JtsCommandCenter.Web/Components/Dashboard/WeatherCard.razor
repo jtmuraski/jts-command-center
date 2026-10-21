@@ -1,0 +1,44 @@
+<DashboardCard Title="Weather">
+    <HeaderContent>@location</HeaderContent>
+    <ChildContent>
+        <div class="current">
+            <div>
+                <div class="temp">@currentTemp°<span class="unit">F</span></div>
+                <div class="condition">Partly Cloudy</div>
+                <div class="hilo">H @currentHigh° · L @currentLow°</div>
+            </div>
+            <WeatherIcon Condition="WeatherCondition.PartlyCloudy" Size="84" />
+        </div>
+
+        <ul class="forecast">
+            @foreach (var day in forecast)
+            {
+                <li>
+                    <span class="day">@day.Day</span>
+                    <WeatherIcon Condition="day.Condition" Size="30" />
+                    <span class="high">@day.High°</span>
+                    <span class="low">@day.Low°</span>
+                </li>
+            }
+        </ul>
+    </ChildContent>
+</DashboardCard>
+
+@code {
+    // Placeholder data until a weather service is wired up.
+    private readonly string location = "Howard Lake, MN";
+    private readonly int currentTemp = 48;
+    private readonly int currentHigh = 52;
+    private readonly int currentLow = 31;
+
+    private readonly ForecastDay[] forecast =
+    [
+        new("Mon", WeatherCondition.PartlyCloudy, 50, 32),
+        new("Tue", WeatherCondition.Sunny, 54, 30),
+        new("Wed", WeatherCondition.Cloudy, 47, 29),
+        new("Thu", WeatherCondition.Rain, 44, 33),
+        new("Fri", WeatherCondition.Snow, 36, 24),
+    ];
+
+    private sealed record ForecastDay(string Day, WeatherCondition Condition, int High, int Low);
+}

@@ -1,0 +1,44 @@
+<DashboardCard Title="Due Today">
+    <HeaderContent>@items.Count(i => i.Done) of @items.Count done</HeaderContent>
+    <ChildContent>
+        <ul class="todos">
+            @foreach (var item in items.OrderBy(i => i.Done).ThenBy(i => i.Due))
+            {
+                <li class="@(item.Done ? "done" : "")">
+                    <label>
+                        <input type="checkbox" checked="@item.Done" @onchange="() => item.Done = !item.Done" />
+                        <span class="check" aria-hidden="true"></span>
+                        <span class="text">
+                            <span class="title">@item.Title</span>
+                            <span class="meta">
+                                <span class="tag tag-@item.Area.ToLowerInvariant()">@item.Area</span>
+                                <span class="due">@item.Due.ToString("h:mm tt")</span>
+                            </span>
+                        </span>
+                    </label>
+                </li>
+            }
+        </ul>
+        <button class="cc-btn cc-btn-ghost add" type="button" disabled title="Coming soon">+ Add task</button>
+    </ChildContent>
+</DashboardCard>
+
+@code {
+    // Placeholder data until tasks are persisted. Checking items only changes in-memory state.
+    private readonly List<TodoItem> items =
+    [
+        new("Review sprint backlog", "Work", new TimeOnly(9, 0)),
+        new("Send status update to client", "Work", new TimeOnly(11, 30)) { Done = true },
+        new("1:1 with team lead", "Work", new TimeOnly(14, 0)),
+        new("Pick up prescription", "Personal", new TimeOnly(17, 0)),
+        new("Pay electric bill", "Personal", new TimeOnly(20, 0)),
+    ];
+
+    private sealed class TodoItem(string title, string area, TimeOnly due)
+    {
+        public string Title { get; } = title;
+        public string Area { get; } = area;
+        public TimeOnly Due { get; } = due;
+        public bool Done { get; set; }
+    }
+}

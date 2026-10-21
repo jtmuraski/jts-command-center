@@ -27,7 +27,8 @@ src/
       Routes.razor               Router
       Layout/                    MainLayout (sidebar + topbar shell), NavMenu, ReconnectModal
       Pages/                     Routable pages (Home = dashboard)
-      Shared/                    (create as needed) reusable non-page components
+      Dashboard/                 Dashboard cards (Weather, Todo, Projects, Sports, News)
+      Shared/                    Reusable components (DashboardCard wrapper, WeatherIcon)
     wwwroot/app.css              Global theme: color tokens + base styles
 ```
 
@@ -54,6 +55,8 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 - Shared utility classes in `app.css`: `.cc-card`, `.cc-btn`, `.cc-btn-ghost`, `.cc-muted`.
 - Component-specific styles go in a scoped `Component.razor.css` file next to the component. Use `::deep` when styling child components (e.g. `NavLink`).
 - Layout must stay responsive: below 900px the sidebar becomes an off-canvas drawer toggled from the top bar.
+- Dashboard (`Pages/Home.razor`) uses CSS grid areas: 1 column on phones (to-do first), 2 columns from 720px, 3 columns from 1200px. New cards wrap their content in `<DashboardCard Title="...">` and get a grid area in `Home.razor.css`.
+- Dashboard cards currently use hard-coded placeholder data in their `@code` blocks. When wiring real data, move it behind an injected service.
 - New sections get a link in `Components/Layout/NavMenu.razor` (group under a `nav-section` heading).
 
 ## Code conventions

@@ -1,0 +1,28 @@
+<DashboardCard Title="News">
+    <HeaderContent>Top stories</HeaderContent>
+    <ChildContent>
+        <ul class="stories">
+            @foreach (var story in stories)
+            {
+                <li>
+                    <span class="topic">@story.Topic</span>
+                    <a class="headline" href="" aria-disabled="true">@story.Headline</a>
+                    <span class="source">@story.Source · @story.Age</span>
+                </li>
+            }
+        </ul>
+    </ChildContent>
+</DashboardCard>
+
+@code {
+    // Placeholder data until a news feed is wired up.
+    private readonly Story[] stories =
+    [
+        new("AI & Tech", "Placeholder headline about the latest developments in AI tooling", "Tech Source", "23 min ago"),
+        new("Space", "Placeholder headline about an upcoming launch window", "Space Source", "1 hr ago"),
+        new("Economy", "Placeholder headline about markets and interest rates", "Business Source", "2 hr ago"),
+        new("Local", "Placeholder headline about Minnesota news", "Local Source", "3 hr ago"),
+    ];
+
+    private sealed record Story(string Topic, string Headline, string Source, string Age);
+}

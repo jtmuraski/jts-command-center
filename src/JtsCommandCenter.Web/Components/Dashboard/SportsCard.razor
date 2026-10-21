@@ -1,0 +1,58 @@
+<DashboardCard Title="Sports">
+    <HeaderContent>Sample scores</HeaderContent>
+    <ChildContent>
+        @foreach (var league in leagues)
+        {
+            <section class="league">
+                <h3 class="group">@league.Sport <span>@league.Name</span></h3>
+                <ul class="games">
+                    @foreach (var game in league.Games)
+                    {
+                        <li>
+                            <div class="teams">
+                                <div class="team">
+                                    <span class="abbr">@game.Away</span>
+                                    <span class="score">@game.AwayScore</span>
+                                </div>
+                                <div class="team">
+                                    <span class="abbr">@game.Home</span>
+                                    <span class="score">@game.HomeScore</span>
+                                </div>
+                            </div>
+                            <span class="status @(game.Status == "Live" ? "live" : "")">@game.Status</span>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+
+        <a class="fantasy" href="" aria-disabled="true">
+            Fantasy tracker
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+        </a>
+    </ChildContent>
+</DashboardCard>
+
+@code {
+    // Placeholder data until a sports API is wired up.
+    private readonly League[] leagues =
+    [
+        new("Football", "NFL",
+        [
+            new("GB", "MIN", "17", "24", "Final"),
+            new("DET", "CHI", "10", "7", "Q3 4:12"),
+        ]),
+        new("Baseball", "MLB",
+        [
+            new("NYY", "MIN", "3", "5", "Live"),
+        ]),
+        new("Hockey", "NHL",
+        [
+            new("WPG", "MIN", "–", "–", "7:00 PM"),
+        ]),
+    ];
+
+    private sealed record League(string Sport, string Name, Game[] Games);
+
+    private sealed record Game(string Away, string Home, string AwayScore, string HomeScore, string Status);
+}

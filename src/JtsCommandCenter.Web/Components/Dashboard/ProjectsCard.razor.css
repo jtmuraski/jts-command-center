@@ -1,0 +1,70 @@
+.group {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cc-text-faint);
+    margin: 0 0 0.5rem;
+}
+
+.projects {
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+    .projects li {
+        padding: 0.65rem 0.8rem 0.75rem;
+        background: var(--cc-surface-raised);
+        border: 1px solid var(--cc-border-subtle);
+        border-radius: var(--cc-radius);
+    }
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.meta {
+    color: var(--cc-text-muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.bar {
+    height: 6px;
+    background: var(--cc-bg);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.fill {
+    height: 100%;
+    border-radius: inherit;
+}
+
+    .fill.work {
+        background: linear-gradient(90deg, var(--cc-primary), var(--cc-accent));
+    }
+
+    .fill.personal {
+        background: var(--cc-accent-2);
+    }
+
+.view-all {
+    margin-top: auto;
+    justify-content: center;
+}

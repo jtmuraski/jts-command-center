@@ -1,0 +1,21 @@
+<section class="dash-card">
+    <header class="dash-card-header">
+        <h2>@Title</h2>
+        @if (HeaderContent is not null)
+        {
+            <div class="dash-card-meta">@HeaderContent</div>
+        }
+    </header>
+    <div class="dash-card-body">
+        @ChildContent
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Optional content shown on the right side of the card header (counts, links, etc.).</summary>
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

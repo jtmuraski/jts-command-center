@@ -1,0 +1,27 @@
+.wx-icon {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
+.wx-sun {
+    stroke: var(--cc-accent-2);
+    stroke-width: 2.25;
+}
+
+.wx-cloud {
+    stroke: var(--cc-text);
+    stroke-width: 2.25;
+    fill: var(--cc-surface);
+}
+
+.wx-rain {
+    stroke: var(--cc-info);
+    stroke-width: 2.25;
+}
+
+.wx-snow {
+    stroke: var(--cc-text);
+    stroke-width: 3.5;
+}

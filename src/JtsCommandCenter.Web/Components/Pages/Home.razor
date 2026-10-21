@@ -3,27 +3,20 @@
 <PageTitle>Dashboard · Command Center</PageTitle>
 
 <header class="page-header">
-    <h1>@Greeting</h1>
-    <p class="cc-muted">Everything in one place. Modules will appear here as they're built.</p>
+    <div>
+        <h1>@Greeting</h1>
+        <p class="cc-muted">Here's what's on deck today.</p>
+    </div>
+    <span class="sample-badge" title="Cards show placeholder data until back-end services are connected">Sample data</span>
 </header>
 
-<section class="tiles">
-    <article class="cc-card tile">
-        <span class="tile-dot" style="background: var(--cc-accent)"></span>
-        <h3>Professional</h3>
-        <p class="cc-muted">Work projects, tasks, and notes.</p>
-    </article>
-    <article class="cc-card tile">
-        <span class="tile-dot" style="background: var(--cc-accent-2)"></span>
-        <h3>Personal</h3>
-        <p class="cc-muted">Home, finances, goals, and errands.</p>
-    </article>
-    <article class="cc-card tile">
-        <span class="tile-dot" style="background: var(--cc-accent-3)"></span>
-        <h3>Schedule</h3>
-        <p class="cc-muted">Upcoming events and reminders.</p>
-    </article>
-</section>
+<div class="dashboard">
+    <div class="slot slot-weather"><WeatherCard /></div>
+    <div class="slot slot-todo"><TodoCard /></div>
+    <div class="slot slot-projects"><ProjectsCard /></div>
+    <div class="slot slot-sports"><SportsCard /></div>
+    <div class="slot slot-news"><NewsCard /></div>
+</div>
 
 @code {
     private static string Greeting => DateTime.Now.Hour switch

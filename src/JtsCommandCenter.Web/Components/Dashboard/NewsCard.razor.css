@@ -1,0 +1,42 @@
+.stories {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+    .stories li {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        padding: 0.75rem 0;
+        border-top: 1px solid var(--cc-border-subtle);
+    }
+
+        .stories li:first-child {
+            border-top: 0;
+            padding-top: 0;
+        }
+
+.topic {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--cc-accent);
+}
+
+.headline {
+    color: var(--cc-text-strong);
+    line-height: 1.35;
+}
+
+    .headline:hover {
+        color: var(--cc-accent);
+    }
+
+.source {
+    font-size: 0.8rem;
+    color: var(--cc-text-faint);
+}
