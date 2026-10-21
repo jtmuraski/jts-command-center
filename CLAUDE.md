@@ -35,7 +35,7 @@ src/
       Routes.razor               Router
       Layout/                    MainLayout (sidebar + topbar shell), NavMenu, ReconnectModal
       Pages/                     Routable pages (Home = dashboard; Sports/ = Sports Center pages)
-      SportsCenter/              Sports Center components (ScoreboardCard, NewsList)
+      SportsCenter/              Sports Center components (ScoreboardCard, NewsList, GameDetailView, WinProbabilityChart)
       Dashboard/                 Dashboard cards (Weather, Todo, Projects, Sports, News)
       Shared/                    Reusable components (DashboardCard wrapper, WeatherIcon)
     wwwroot/app.css              Global theme: color tokens + base styles
@@ -72,13 +72,21 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 - Layout must stay responsive: below 900px the sidebar becomes an off-canvas drawer toggled from the top bar.
 - Dashboard (`Pages/Home.razor`) uses CSS grid areas: 1 column on phones (to-do first), 2 columns from 720px, 3 columns from 1200px. New cards wrap their content in `<DashboardCard Title="...">` and get a grid area in `Home.razor.css`.
 - Dashboard cards other than Weather and Sports still use hard-coded placeholder data in their `@code` blocks. When wiring real data, add the interface and models to Core, the implementation to Infrastructure, and inject the interface (Weather is the reference pattern).
-- New sections get a link in `Components/Layout/NavMenu.razor` (group under a `nav-section` heading).
+- New sections get a link in `Components/Layout/NavMenu.razor` (group under a `nav-section` heading). Groups that hold several pages (like Sports Center) use the collapsible `nav-group-toggle` pattern: open/closed is remembered in `localStorage`, and the group opens itself when you arrive at one of its pages from elsewhere.
 
 ## Integrations
 
 - **Weather:** [Open-Meteo](https://open-meteo.com/) forecast API, free and with no API key. Configured under `Weather` in `appsettings.json` (location, coordinates, temperature/wind/precipitation units, `CacheMinutes`, `RefreshMinutes`). The card shows current conditions, feels-like, wind/gusts, humidity, precipitation chance and snowfall (today and per forecast day), and sunrise/sunset. `OpenMeteoWeatherService` is a typed `HttpClient` that caches the report in `IMemoryCache`; `WeatherCard` re-requests on a `PeriodicTimer` while open and keeps showing the last good report if a refresh fails. Times shown come from the API in the location's own time zone, not server time.
 - **Sports:** ESPN's public, undocumented site API (`site.api.espn.com`, no API key). Configured under `Sports` in `appsettings.json`: a `Teams` list (ESPN sport/league/team slugs, a `Display` mode, `AlwaysShowTies`), plus `TimeZone`, `CacheMinutes`, `LiveCacheSeconds`, `RefreshMinutes`. Each team's regular-season and postseason schedules are fetched (`teams/{team}/schedule?seasontype=2|3`) and parsed as loose JSON, since shapes vary by sport. `LastAndNext` mode (Vikings, Wild) shows the last final and the next or live game. `Series` mode (Twins) shows every game of the current series plus the next series. Between series, the one that just finished stays current until the next one's first game day. When a team has nothing left to play, the section shows a season recap instead: the record, plus the division place and full division name from `apis/v2/.../standings`. One team failing shows "unavailable" for that section only. While a game is live, the cache drops to `LiveCacheSeconds` and the card re-checks every minute.
 - **Sports Center** (`/sports/football`, `/sports/baseball`, `/sports/hockey`; Baseball and Hockey are placeholders): configured under `SportsCenter:Leagues` keyed by ESPN league slug. `EspnScoreboardService` loads a league week (`scoreboard?seasontype=&week=`) and the season calendar used for paging (regular season and postseason only). Completed weeks are cached longer and live weeks shorter. `ScoreboardCard` pins games involving `PinnedTeams` (Vikings, Bengals) at the top, and also leaves them in their normal day group. It shows a pinned team's bye week too. `SportsNewsService` merges ESPN's league news with RSS/Atom `Feeds` (deduped by title, `ExcludeKeywords` filters sportsbook promos). Team news (`FocusTeam`) comes from the team's own feeds, ESPN articles tagged with the team (only when the story is about at most two teams or names the team), and league-feed headlines that contain a `Keywords` entry. ESPN's `news?team=` filter is ignored by the API, so don't rely on it. Feed requests send a User-Agent because some hosts block requests without one.
+- **Game pages** (`/sports/football/game/{eventId}`): scoreboard tiles link here. The scoreboard keeps its week in the query string (`?type=2&week=5`), so a game page's back link returns to the same week. `EspnGameDetailService` reads ESPN's `summary?event=` endpoint and returns:
+  - the scorebug and line score, game info (venue, attendance, TV, weather, officials), and the injury report
+  - team stats with comparison bars (`LowerIsBetter` for turnovers and penalties; "count-yards" stats such as penalties compare by count)
+  - box score tables per category, scoring plays, and play-by-play grouped by drive
+  - win probability per play (drawn by `WinProbabilityChart`), and leaders (game leaders once play starts, season leaders before)
+  - before kickoff only: the matchup predictor, betting line, and last five games (`Pregame`). ESPN's team stats are season averages at that point.
+
+  Timeouts and period breaks carry a down-and-distance in ESPN's data but aren't snaps, so they get no down or yardage. A turnover's `statYardage` is the return, so it isn't shown as a gain. Final games are cached for `CompletedWeekCacheMinutes`, and live games refresh every minute.
 
 ## Code conventions
 

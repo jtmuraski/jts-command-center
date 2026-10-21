@@ -1,0 +1,105 @@
+@* Win probability over the course of a game: the away team's chance rises toward the top, the home
+   team's toward the bottom, with 50% through the middle and a divider at each new quarter. *@
+
+@if (Points.Count > 1)
+{
+    <div class="legend">
+        <span>&#9650; @Away</span>
+        <span>&#9660; @Home</span>
+    </div>
+    <div class="chart">
+
+        <svg viewBox="0 0 @Width @Height" preserveAspectRatio="none" role="img"
+             aria-label="@($"Win probability. Finished with {Leader} at {LeaderChance:0}%.")">
+            <line class="mid" x1="0" y1="@(Height / 2)" x2="@Width" y2="@(Height / 2)" />
+            @foreach (var divider in dividers)
+            {
+                <line class="divider" x1="@divider.X" y1="0" x2="@divider.X" y2="@Height" />
+            }
+            <path class="area" d="@areaPath" />
+            <path class="line" d="@linePath" />
+        </svg>
+
+        <div class="periods">
+            @foreach (var divider in dividers.Prepend(new Divider(0, Label(Points[0].Period))))
+            {
+                <span style="left: @Percent(divider.X)">@divider.Label</span>
+            }
+        </div>
+    </div>
+    <p class="summary">
+        @if (IsFinal)
+        {
+            <span>@Leader won after trailing in win probability for @TrailingShare(Leader)% of plays.</span>
+        }
+        else
+        {
+            <span><strong>@Leader</strong> @LeaderChance.ToString("0")% to win</span>
+        }
+    </p>
+}
+
+@code {
+    private const double Width = 1000;
+    private const double Height = 200;
+
+    [Parameter, EditorRequired] public IReadOnlyList<WinProbabilityPoint> Points { get; set; } = [];
+
+    [Parameter, EditorRequired] public string Away { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public string Home { get; set; } = string.Empty;
+
+    [Parameter] public bool IsFinal { get; set; }
+
+    private sealed record Divider(double X, string Label);
+
+    private string linePath = "";
+    private string areaPath = "";
+    private List<Divider> dividers = [];
+
+    private double FinalHome => Points.Count > 0 ? Points[^1].HomeWinPercentage : 0.5;
+    private string Leader => FinalHome >= 0.5 ? Home : Away;
+    private double LeaderChance => Math.Max(FinalHome, 1 - FinalHome) * 100;
+
+    protected override void OnParametersSet()
+    {
+        if (Points.Count < 2)
+        {
+            return;
+        }
+
+        var coordinates = Points
+            .Select((p, i) => (X: i * Width / (Points.Count - 1), Y: p.HomeWinPercentage * Height))
+            .ToList();
+
+        var line = string.Join(" ", coordinates.Select((c, i) => $"{(i == 0 ? "M" : "L")}{F(c.X)},{F(c.Y)}"));
+        linePath = line;
+        areaPath = $"M0,{F(Height / 2)} {line.Replace("M", "L")} L{F(Width)},{F(Height / 2)} Z";
+
+        dividers = Points
+            .Select((p, i) => (p.Period, X: coordinates[i].X, Index: i))
+            .Where(p => p.Index > 0 && p.Period != Points[p.Index - 1].Period)
+            .Select(p => new Divider(p.X, Label(p.Period)))
+            .ToList();
+    }
+
+    /// <summary>Share of plays (0–100) where <paramref name="team"/> was below 50%.</summary>
+    private int TrailingShare(string team)
+    {
+        var trailing = team == Home
+            ? Points.Count(p => p.HomeWinPercentage < 0.5)
+            : Points.Count(p => p.HomeWinPercentage > 0.5);
+        return (int)Math.Round(100.0 * trailing / Points.Count);
+    }
+
+    private static string Label(int period) => period switch
+    {
+        <= 4 => $"Q{Math.Max(period, 1)}",
+        5 => "OT",
+        _ => $"OT{period - 4}"
+    };
+
+    private static string Percent(double x) => (x / Width * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "%";
+
+    private static string F(double value) => value.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+}

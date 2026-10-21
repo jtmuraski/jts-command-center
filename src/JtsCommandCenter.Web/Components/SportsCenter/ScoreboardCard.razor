@@ -3,6 +3,7 @@
 @inject IScoreboardService Scoreboards
 @inject IOptions<SportsCenterOptions> Options
 @inject ILogger<ScoreboardCard> Logger
+@inject NavigationManager Navigation
 
 <DashboardCard Title="Games">
     <HeaderContent>
@@ -118,6 +119,17 @@
     /// <summary>ESPN league slug, matching a key under SportsCenter:Leagues ("nfl").</summary>
     [Parameter, EditorRequired] public string League { get; set; } = string.Empty;
 
+    /// <summary>Route prefix for a game's detail page ("sports/football/game"); tiles link to "{prefix}/{id}". Null for no links.</summary>
+    [Parameter] public string? GameLinkBase { get; set; }
+
+    /// <summary>The hosting page's route ("sports/football"); when set, paging keeps the week in its query string.</summary>
+    [Parameter] public string? PagePath { get; set; }
+
+    /// <summary>Week to open on (from the page's query string); ESPN's current week when null.</summary>
+    [Parameter] public int? InitialSeasonType { get; set; }
+
+    [Parameter] public int? InitialWeek { get; set; }
+
     private readonly CancellationTokenSource cts = new();
     private WeekScoreboard? scoreboard;
     private WeekRef? selected;
@@ -131,7 +143,8 @@
     private List<string> PinnedTeams =>
         Options.Value.Leagues.TryGetValue(League, out var league) ? league.PinnedTeams : [];
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    protected override Task OnInitializedAsync() =>
+        LoadAsync(InitialSeasonType is int type && InitialWeek is int week ? new WeekRef(type, week, "", default, default) : null);
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -174,6 +187,12 @@
     private async Task GoToAsync(WeekRef? week)
     {
         await LoadAsync(week);
+
+        // Keep the week in the URL so the back button from a game page returns here.
+        if (PagePath is not null && error is null)
+        {
+            Navigation.NavigateTo(selected is null ? PagePath : $"{PagePath}?type={selected.SeasonType}&week={selected.Week}", replace: true);
+        }
     }
 
     private async Task LoadAsync(WeekRef? week = null)
@@ -186,6 +205,11 @@
             if (week is null)
             {
                 currentWeek = result.Week;
+            }
+            else
+            {
+                // Opened on a specific week: still learn which week is current, for "Back to this week".
+                currentWeek ??= (await Scoreboards.GetWeekAsync(League, null, cts.Token)).Week;
             }
 
             // Paging back to the week ESPN considers current is the same as "this week".
@@ -213,7 +237,11 @@
     }
 
     /// <param name="showDay">Include the weekday with the kickoff time (for tiles outside a day group).</param>
-    private RenderFragment GameTile(ScoreboardGame game, bool showDay = false) => @<article class="game @(game.State == GameState.Live ? "is-live" : "")">
+    private RenderFragment GameTile(ScoreboardGame game, bool showDay = false) => GameLinkBase is null
+        ? GameTileBody(game, showDay)
+        : @<a class="game-link" href="@($"{GameLinkBase}/{game.Id}")" title="Box score and play-by-play">@GameTileBody(game, showDay)</a>;
+
+    private RenderFragment GameTileBody(ScoreboardGame game, bool showDay) => @<article class="game @(game.State == GameState.Live ? "is-live" : "")">
         <div class="teams">
             @TeamRow(game.Away, game)
             @TeamRow(game.Home, game)

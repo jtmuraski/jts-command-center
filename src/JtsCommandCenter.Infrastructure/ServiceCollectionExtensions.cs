@@ -47,6 +47,11 @@ public static class ServiceCollectionExtensions
             client.BaseAddress = new Uri(EspnBaseAddress);
             client.Timeout = RequestTimeout;
         });
+        services.AddHttpClient<IGameDetailService, EspnGameDetailService>(client =>
+        {
+            client.BaseAddress = new Uri(EspnBaseAddress);
+            client.Timeout = RequestTimeout;
+        });
         services.AddHttpClient<ISportsNewsService, SportsNewsService>(client =>
         {
             // ESPN relative URLs resolve against this; RSS feeds are fetched by absolute URL.

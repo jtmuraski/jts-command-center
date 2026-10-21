@@ -1,0 +1,69 @@
+.chart {
+    position: relative;
+    margin-top: 0.4rem;
+    padding-bottom: 1.4rem;
+}
+
+svg {
+    display: block;
+    width: 100%;
+    height: 170px;
+    overflow: visible;
+}
+
+.mid {
+    stroke: var(--cc-border);
+    stroke-dasharray: 4 4;
+    vector-effect: non-scaling-stroke;
+}
+
+.divider {
+    stroke: var(--cc-border-subtle);
+    vector-effect: non-scaling-stroke;
+}
+
+.area {
+    fill: var(--cc-primary-soft);
+}
+
+.line {
+    fill: none;
+    stroke: var(--cc-accent);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--cc-text-faint);
+}
+
+.periods {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1.1rem;
+    font-size: 0.72rem;
+    color: var(--cc-text-faint);
+}
+
+    .periods span {
+        position: absolute;
+        padding-left: 0.3rem;
+    }
+
+.summary {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: var(--cc-text-muted);
+}
+
+    .summary strong {
+        color: var(--cc-text-strong);
+    }

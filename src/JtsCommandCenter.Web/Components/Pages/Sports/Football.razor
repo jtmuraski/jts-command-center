@@ -12,7 +12,8 @@
 
 <div class="sports-page">
     <div class="slot slot-games">
-        <ScoreboardCard League="@League" />
+        <ScoreboardCard League="@League" PagePath="sports/football" GameLinkBase="sports/football/game"
+                        InitialSeasonType="SeasonType" InitialWeek="Week" />
     </div>
 
     <div class="slot slot-team">
@@ -52,6 +53,11 @@
 
 @code {
     private const string League = "nfl";
+
+    /// <summary>Scoreboard week to open on, e.g. ?type=2&amp;week=5 (set by paging and by game pages' back link).</summary>
+    [SupplyParameterFromQuery(Name = "type")] public int? SeasonType { get; set; }
+
+    [SupplyParameterFromQuery] public int? Week { get; set; }
 
     private readonly CancellationTokenSource cts = new();
     private LeagueNews? news;

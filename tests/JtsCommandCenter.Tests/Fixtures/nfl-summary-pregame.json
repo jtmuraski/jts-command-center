@@ -1,0 +1,42 @@
+{
+  "header": {
+    "id": "901",
+    "week": 7,
+    "season": { "year": 2026, "type": 2 },
+    "competitions": [ {
+      "date": "2026-10-25T17:00Z",
+      "timeValid": true,
+      "status": { "type": { "state": "pre", "completed": false, "shortDetail": "10/25 - 1:00 PM EDT" } },
+      "broadcasts": [ { "media": { "shortName": "CBS" } } ],
+      "competitors": [
+        { "homeAway": "home", "linescores": [],
+          "record": [ { "type": "total", "displayValue": "5-0" } ],
+          "team": { "id": "16", "abbreviation": "MIN", "displayName": "Minnesota Vikings", "name": "Vikings",
+                    "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/min.png" } },
+        { "homeAway": "away", "linescores": [],
+          "record": [ { "type": "total", "displayValue": "2-4" } ],
+          "team": { "id": "11", "abbreviation": "IND", "displayName": "Indianapolis Colts", "name": "Colts" } }
+      ]
+    } ]
+  },
+  "gameInfo": {
+    "venue": { "fullName": "U.S. Bank Stadium", "address": { "city": "Minneapolis", "state": "MN" } },
+    "weather": { "temperature": 52, "precipitation": 51, "gust": 12 }
+  },
+  "boxscore": { "teams": [] },
+  "predictor": { "header": "Matchup Predictor", "homeTeam": { "id": "16", "gameProjection": "65.4" }, "awayTeam": { "id": "11", "gameProjection": "34.3" } },
+  "pickcenter": [ {
+    "provider": { "name": "DraftKings" }, "details": "MIN -6.5", "overUnder": 44.5,
+    "awayTeamOdds": { "moneyLine": 240 }, "homeTeamOdds": { "moneyLine": -300 }
+  } ],
+  "lastFiveGames": [
+    { "team": { "abbreviation": "MIN" }, "events": [
+      { "gameResult": "W", "score": "23-13", "atVs": "@", "opponent": { "abbreviation": "NO" } } ] },
+    { "team": { "abbreviation": "IND" }, "events": [
+      { "gameResult": "L", "score": "33-30 OT", "atVs": "@", "opponent": { "abbreviation": "KC" } } ] }
+  ],
+  "leaders": [
+    { "team": { "abbreviation": "MIN" }, "leaders": [
+      { "displayName": "Rushing Yards", "leaders": [ { "displayValue": "97 CAR, 410 YDS, 2 TD", "athlete": { "displayName": "Aaron Jones Sr.", "position": { "abbreviation": "RB" } } } ] } ] }
+  ]
+}

@@ -91,6 +91,28 @@
     gap: 0.6rem;
 }
 
+.game-link {
+    display: block;
+    min-width: 0;
+    color: inherit;
+    border-radius: var(--cc-radius);
+}
+
+    .game-link .game {
+        height: 100%;
+        transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .game-link:hover .game {
+        border-color: var(--cc-border);
+        background: var(--cc-sidebar-active);
+    }
+
+    .game-link:focus-visible {
+        outline: 2px solid var(--cc-accent);
+        outline-offset: 2px;
+    }
+
 .game {
     display: flex;
     flex-direction: column;

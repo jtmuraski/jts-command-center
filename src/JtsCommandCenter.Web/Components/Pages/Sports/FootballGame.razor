@@ -1,0 +1,143 @@
+@page "/sports/football/game/{EventId}"
+@using Microsoft.Extensions.Options
+@implements IDisposable
+@inject IGameDetailService GameDetails
+@inject IOptions<SportsCenterOptions> Options
+@inject ILogger<FootballGame> Logger
+
+<PageTitle>@Title · Command Center</PageTitle>
+
+<nav class="crumbs">
+    <a href="@BackLink">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+        @(game?.Week is int week ? (game.SeasonType == 3 ? "Postseason scoreboard" : $"Week {week} scoreboard") : "Football")
+    </a>
+    @if (game is not null)
+    {
+        <span class="updated">
+            @if (error is not null)
+            {
+                <span class="stale">Couldn't refresh · showing @game.UpdatedAt.ToString("h:mm tt")</span>
+            }
+            else
+            {
+                <span>As of @game.UpdatedAt.ToString("h:mm tt")</span>
+            }
+            · <a href="@($"https://www.espn.com/nfl/game/_/gameId/{EventId}")" target="_blank" rel="noopener">ESPN</a>
+        </span>
+    }
+</nav>
+
+@if (game is not null)
+{
+    <GameDetailView Game="game" FollowedTeams="FollowedTeams" />
+}
+else if (error is not null)
+{
+    <div class="cc-card state">
+        <p>This game couldn't be loaded.</p>
+        <button class="cc-btn cc-btn-ghost" type="button" @onclick="LoadAsync" disabled="@loading">
+            @(loading ? "Retrying…" : "Try again")
+        </button>
+    </div>
+}
+else
+{
+    <div class="cc-card state" aria-busy="true">
+        <p class="cc-muted">Loading game…</p>
+    </div>
+}
+
+@code {
+    private const string League = "nfl";
+
+    // Live games refresh every minute; others are checked rarely in case a start time or status changes.
+    private static readonly TimeSpan LiveRefresh = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan IdleRefresh = TimeSpan.FromMinutes(10);
+
+    [Parameter] public string EventId { get; set; } = string.Empty;
+
+    private readonly CancellationTokenSource cts = new();
+    private GameDetail? game;
+    private string? error;
+    private bool loading;
+    private DateTime lastLoad;
+
+    private IReadOnlyCollection<string> FollowedTeams =>
+        Options.Value.Leagues.TryGetValue(League, out var league) ? league.PinnedTeams : [];
+
+    private string Title => game is null ? "Game" : $"{game.Away.Abbreviation} @ {game.Home.Abbreviation}";
+
+    private string BackLink => game?.Week is int week ? $"sports/football?type={game.SeasonType}&week={week}" : "sports/football";
+
+    protected override Task OnParametersSetAsync() => LoadAsync();
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _ = RefreshLoopAsync();
+        }
+    }
+
+    private async Task RefreshLoopAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cts.Token))
+            {
+                if (game is { State: GameState.Final })
+                {
+                    break; // finished games don't change
+                }
+
+                var interval = game?.State == GameState.Live ? LiveRefresh : IdleRefresh;
+                if (DateTime.UtcNow - lastLoad < interval)
+                {
+                    continue;
+                }
+
+                await InvokeAsync(async () =>
+                {
+                    await LoadAsync();
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Page closed or navigated away.
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        try
+        {
+            game = await GameDetails.GetGameAsync(League, EventId, cts.Token);
+            error = null;
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // Navigated away mid-request.
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to load {League} game {EventId}", League, EventId);
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+            lastLoad = DateTime.UtcNow;
+        }
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}

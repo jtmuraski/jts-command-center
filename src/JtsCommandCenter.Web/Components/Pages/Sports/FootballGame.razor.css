@@ -1,0 +1,60 @@
+.crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-bottom: 1rem;
+}
+
+    .crumbs > a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        min-height: 2.5rem; /* touch target */
+        color: var(--cc-accent);
+        font-weight: 500;
+    }
+
+        .crumbs > a:hover {
+            color: var(--cc-text-strong);
+        }
+
+    .crumbs svg {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+.updated {
+    font-size: 0.78rem;
+    color: var(--cc-text-faint);
+}
+
+    .updated a {
+        color: var(--cc-text-faint);
+    }
+
+        .updated a:hover {
+            color: var(--cc-text-muted);
+        }
+
+.stale {
+    color: var(--cc-warning);
+}
+
+.state {
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    text-align: center;
+}
+
+    .state p {
+        margin: 0;
+    }

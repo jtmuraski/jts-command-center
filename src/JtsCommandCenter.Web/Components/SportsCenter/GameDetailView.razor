@@ -1,0 +1,579 @@
+@* One football game: scorebug and line score, then (as available) pregame matchup, scoring plays, win
+   probability, team stats, leaders, box score, play-by-play, game info, and injuries. On wide screens the
+   cards sit in two columns; on narrow screens the columns dissolve and cards stack by their order class. *@
+
+<section class="scorebug">
+    <div class="matchup">
+        @TeamBlock(Game.Away, "away")
+        <div class="score away-score @ScoreClass(Game.Away)">@(Game.Away.Score?.ToString() ?? "")</div>
+        <div class="state">
+            @switch (Game.State)
+            {
+                case GameState.Live:
+                    <span class="live">@Game.StatusDetail</span>
+                    break;
+                case GameState.Final:
+                case GameState.Postponed:
+                    <span class="final">@Game.StatusDetail</span>
+                    <span class="date">@Game.Start.ToString("ddd, MMM d")</span>
+                    break;
+                default:
+                    <span class="kickoff">@Game.Start.ToString("ddd, MMM d")</span>
+                    <span class="kickoff-time">@(Game.TimeTbd ? "Time TBD" : Game.Start.ToString("h:mm tt"))</span>
+                    break;
+            }
+        </div>
+        <div class="score home-score @ScoreClass(Game.Home)">@(Game.Home.Score?.ToString() ?? "")</div>
+        @TeamBlock(Game.Home, "home")
+    </div>
+
+    @if (Game.PeriodLabels.Count > 0)
+    {
+        <div class="table-scroll">
+            <table class="linescore">
+                <thead>
+                    <tr>
+                        <th scope="col"><span class="sr-only">Team</span></th>
+                        @foreach (var label in Game.PeriodLabels)
+                        {
+                            <th scope="col">@label</th>
+                        }
+                        <th scope="col" class="total">T</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var team in new[] { Game.Away, Game.Home })
+                    {
+                        <tr>
+                            <th scope="row">@team.Abbreviation</th>
+                            @for (var i = 0; i < Game.PeriodLabels.Count; i++)
+                            {
+                                <td>@(i < team.Linescores.Count ? team.Linescores[i] : "")</td>
+                            }
+                            <td class="total">@team.Score</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <p class="meta">
+        @foreach (var (part, index) in MetaParts().Select((p, i) => (p, i)))
+        {
+            @if (index > 0)
+            {
+                <span class="dot" aria-hidden="true">·</span>
+            }
+            <span>@part</span>
+        }
+    </p>
+</section>
+
+<div class="layout">
+    <div class="col main">
+        @if (Game.Pregame is { } pregame)
+        {
+            <div class="slot o-1">
+                <DashboardCard Title="Matchup">
+                    <ChildContent>
+                        @if (pregame.AwayWinChance is double awayChance && pregame.HomeWinChance is double homeChance)
+                        {
+                            <h3 class="sub-title">ESPN matchup predictor</h3>
+                            <div class="predictor">
+                                <span>@Game.Away.Abbreviation <strong>@awayChance.ToString("0.#")%</strong></span>
+                                <span><strong>@homeChance.ToString("0.#")%</strong> @Game.Home.Abbreviation</span>
+                            </div>
+                            <div class="split-bar" role="img" aria-label="@($"{Game.Away.Abbreviation} {awayChance:0.#}%, {Game.Home.Abbreviation} {homeChance:0.#}%")">
+                                <span class="away-share" style="width: @Pct(awayChance / (awayChance + homeChance))"></span>
+                            </div>
+                        }
+
+                        @if (pregame.Line is { } line)
+                        {
+                            <h3 class="sub-title">Line@(line.Provider.Length > 0 ? $" · {line.Provider}" : "")</h3>
+                            <dl class="line">
+                                @if (line.Details is not null)
+                                {
+                                    <div><dt>Spread</dt><dd>@line.Details</dd></div>
+                                }
+                                @if (line.OverUnder is double total)
+                                {
+                                    <div><dt>Over/under</dt><dd>@total.ToString("0.#")</dd></div>
+                                }
+                                @if (line.AwayMoneyLine is int awayMl && line.HomeMoneyLine is int homeMl)
+                                {
+                                    <div><dt>Moneyline</dt><dd>@Game.Away.Abbreviation @MoneyLine(awayMl) · @Game.Home.Abbreviation @MoneyLine(homeMl)</dd></div>
+                                }
+                            </dl>
+                        }
+
+                        @if (pregame.RecentForm.Count > 0)
+                        {
+                            <h3 class="sub-title">Last @pregame.RecentForm.Max(f => f.Games.Count) games</h3>
+                            @foreach (var form in pregame.RecentForm)
+                            {
+                                <div class="form-row">
+                                    <span class="form-team">@form.TeamAbbreviation</span>
+                                    <ul class="form">
+                                        @foreach (var g in form.Games)
+                                        {
+                                            <li class="@FormClass(g.Result)" title="@($"{g.Result} {g.Score} {g.AtVs} {g.Opponent}")">
+                                                <span class="form-result">@g.Result</span>
+                                                <span class="form-opp">@g.AtVs @g.Opponent</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        }
+                    </ChildContent>
+                </DashboardCard>
+            </div>
+        }
+
+        @if (Game.ScoringPlays.Count > 0)
+        {
+            <div class="slot o-2">
+                <DashboardCard Title="Scoring plays">
+                    <ChildContent>
+                        @foreach (var quarter in Game.ScoringPlays.GroupBy(p => p.Period))
+                        {
+                            <h3 class="sub-title">@PeriodName(quarter.Key)</h3>
+                            <ul class="scoring">
+                                @foreach (var play in quarter)
+                                {
+                                    <li class="@(IsFollowed(play.TeamAbbreviation) ? "followed" : "")">
+                                        @if (play.TeamLogoUrl is string logo)
+                                        {
+                                            <img src="@logo" alt="@play.TeamAbbreviation" width="24" height="24" loading="lazy" />
+                                        }
+                                        <span class="badge" title="@play.Type">@play.TypeAbbreviation</span>
+                                        <span class="scoring-text">
+                                            @play.Text
+                                            <span class="clock">@play.Clock</span>
+                                        </span>
+                                        <span class="running">@Game.Away.Abbreviation @play.AwayScore–@play.HomeScore @Game.Home.Abbreviation</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </ChildContent>
+                </DashboardCard>
+            </div>
+        }
+
+        @if (Game.WinProbability.Count > 1)
+        {
+            <div class="slot o-3">
+                <DashboardCard Title="Win probability">
+                    <ChildContent>
+                        <WinProbabilityChart Points="Game.WinProbability" Away="@Game.Away.Abbreviation" Home="@Game.Home.Abbreviation"
+                                             IsFinal="Game.State == GameState.Final" />
+                    </ChildContent>
+                </DashboardCard>
+            </div>
+        }
+
+        @if (Game.PlayerStats.Count > 0)
+        {
+            <div class="slot o-5">
+                <DashboardCard Title="Box score">
+                    <HeaderContent>
+                        <div class="segmented" role="group" aria-label="Team">
+                            @foreach (var team in new[] { Game.Away, Game.Home })
+                            {
+                                <button type="button" class="@(BoxTeam == team.Abbreviation ? "selected" : "")" aria-pressed="@(BoxTeam == team.Abbreviation ? "true" : "false")"
+                                        @onclick="() => boxTeam = team.Abbreviation">
+                                    @team.Abbreviation
+                                </button>
+                            }
+                        </div>
+                    </HeaderContent>
+                    <ChildContent>
+                        @foreach (var table in Game.PlayerStats.Where(t => t.TeamAbbreviation == BoxTeam))
+                        {
+                            <h3 class="sub-title">@table.Title</h3>
+                            <div class="table-scroll">
+                                <table class="stats">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="player">Player</th>
+                                            @foreach (var label in table.Labels)
+                                            {
+                                                <th scope="col">@label</th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var player in table.Players)
+                                        {
+                                            <tr>
+                                                <th scope="row" class="player">
+                                                    @player.Name
+                                                    @if (player.Jersey is not null)
+                                                    {
+                                                        <span class="jersey">#@player.Jersey</span>
+                                                    }
+                                                </th>
+                                                @foreach (var value in player.Stats)
+                                                {
+                                                    <td>@value</td>
+                                                }
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    @if (table.Totals is { } totals && table.Players.Count > 1)
+                                    {
+                                        <tfoot>
+                                            <tr>
+                                                <th scope="row" class="player">Team</th>
+                                                @foreach (var value in totals)
+                                                {
+                                                    <td>@value</td>
+                                                }
+                                            </tr>
+                                        </tfoot>
+                                    }
+                                </table>
+                            </div>
+                        }
+                    </ChildContent>
+                </DashboardCard>
+            </div>
+        }
+
+        @if (Game.Drives.Count > 0)
+        {
+            <div class="slot o-7">
+                <section class="plays-card">
+                    <button class="plays-toggle" type="button" aria-expanded="@(playsOpen ? "true" : "false")" aria-controls="play-by-play"
+                            @onclick="() => playsOpen = !playsOpen">
+                        <span class="plays-title">Play-by-play</span>
+                        <span class="plays-count">@Game.PlayCount plays · @Game.Drives.Count drives</span>
+                        <svg class="chevron" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+                    </button>
+
+                    @if (playsOpen)
+                    {
+                        <div id="play-by-play">
+                            <div class="filters" role="group" aria-label="Filter plays">
+                                @foreach (var filter in Enum.GetValues<PlayFilter>())
+                                {
+                                    <button type="button" class="chip @(playFilter == filter ? "selected" : "")" aria-pressed="@(playFilter == filter ? "true" : "false")"
+                                            @onclick="() => playFilter = filter">
+                                        @FilterLabel(filter)
+                                    </button>
+                                }
+                            </div>
+
+                            @{ var shown = 0; }
+                            @foreach (var drive in Game.Drives)
+                            {
+                                var plays = drive.Plays.Where(Matches).ToList();
+                                if (plays.Count == 0)
+                                {
+                                    continue;
+                                }
+                                shown += plays.Count;
+
+                                <div class="drive @(drive.IsScore ? "scored" : "")">
+                                    <div class="drive-head">
+                                        @if (drive.TeamLogoUrl is string logo)
+                                        {
+                                            <img src="@logo" alt="" width="22" height="22" loading="lazy" />
+                                        }
+                                        <span class="drive-team">@drive.TeamAbbreviation</span>
+                                        <span class="drive-result">@drive.Result</span>
+                                        <span class="drive-summary">
+                                            @drive.Summary
+                                            @if (drive.StartPosition is not null)
+                                            {
+                                                <span> · @drive.StartPosition@(drive.EndPosition is null ? "" : $" → {drive.EndPosition}")</span>
+                                            }
+                                        </span>
+                                        <span class="drive-start">@PeriodShort(drive.StartPeriod) @drive.StartClock</span>
+                                    </div>
+                                    <ol class="plays">
+                                        @foreach (var play in plays)
+                                        {
+                                            <li class="@PlayClass(play)">
+                                                <span class="play-time">@PeriodShort(play.Period) @play.Clock</span>
+                                                <span class="play-body">
+                                                    @if (play.DownDistance is not null)
+                                                    {
+                                                        <span class="down">@play.DownDistance</span>
+                                                    }
+                                                    <span class="play-text">@play.Text</span>
+                                                </span>
+                                                @if (play.Yards is int yards)
+                                                {
+                                                    <span class="yards @(yards < 0 ? "loss" : yards >= 20 ? "big" : "")">@(yards > 0 ? "+" : "")@yards</span>
+                                                }
+                                            </li>
+                                        }
+                                    </ol>
+                                </div>
+                            }
+
+                            @if (shown == 0)
+                            {
+                                <p class="empty">No plays match this filter.</p>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
+        }
+    </div>
+
+    <div class="col side">
+        @if (Game.TeamStats.Count > 0)
+        {
+            <div class="slot o-4">
+                @* Before kickoff ESPN's team stats are season per-game averages. *@
+                <DashboardCard Title="@(Game.State == GameState.Scheduled ? "Season averages" : "Team stats")">
+                    <ChildContent>
+                        <div class="compare-head">
+                            <span>@Game.Away.Abbreviation</span>
+                            <span>@Game.Home.Abbreviation</span>
+                        </div>
+                        <ul class="compare">
+                            @foreach (var stat in Game.TeamStats)
+                            {
+                                var better = Better(stat);
+                                <li>
+                                    <div class="compare-row">
+                                        <span class="value @(better < 0 ? "better" : "")">@stat.AwayValue</span>
+                                        <span class="label">@stat.Label</span>
+                                        <span class="value @(better > 0 ? "better" : "")">@stat.HomeValue</span>
+                                    </div>
+                                    @if (stat.AwayNumber is double a && stat.HomeNumber is double h && a + h > 0)
+                                    {
+                                        <div class="split-bar thin" aria-hidden="true">
+                                            <span class="away-share" style="width: @Pct(a / (a + h))"></span>
+                                        </div>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    </ChildContent>
+                </DashboardCard>
+            </div>
+        }
+
+        @if (Game.Leaders.Count > 0)
+        {
+            <div class="slot o-6">
+                <DashboardCard Title="@(Game.State == GameState.Scheduled ? "Season leaders" : "Game leaders")">
+                    <ChildContent>
+                        @foreach (var category in LeaderCategories())
+                        {
+                            <h3 class="sub-title">@category</h3>
+                            <ul class="leaders">
+                                @foreach (var team in Game.Leaders)
+                                {
+                                    if (team.Leaders.FirstOrDefault(l => l.Category == category) is { } leader)
+                                    {
+                                        <li>
+                                            <span class="leader-team">@team.TeamAbbreviation</span>
+                                            <span class="leader-name">@leader.Name@(leader.Position is null ? "" : $", {leader.Position}")</span>
+                                            <span class="leader-value">@leader.Value</span>
+                                        </li>
+                                    }
+                                }
+                            </ul>
+                        }
+                    </ChildContent>
+                </DashboardCard>
+            </div>
+        }
+
+        <div class="slot o-8">
+            <DashboardCard Title="Game info">
+                <ChildContent>
+                    <dl class="info">
+                        @if (Game.Info.Venue is not null)
+                        {
+                            <div><dt>Venue</dt><dd>@Game.Info.Venue@(Game.Info.Location is null ? "" : $" · {Game.Info.Location}")</dd></div>
+                        }
+                        @if (Game.Info.Attendance is int attendance)
+                        {
+                            <div><dt>Attendance</dt><dd>@attendance.ToString("N0")</dd></div>
+                        }
+                        @if (Game.Info.Broadcast is not null)
+                        {
+                            <div><dt>TV</dt><dd>@Game.Info.Broadcast</dd></div>
+                        }
+                        @if (Game.Info.Weather is not null)
+                        {
+                            <div><dt>Weather</dt><dd>@Game.Info.Weather</dd></div>
+                        }
+                        @if (Game.Info.Officials.Count > 0)
+                        {
+                            <div>
+                                <dt>Officials</dt>
+                                <dd>
+                                    <ul class="officials">
+                                        @foreach (var official in Game.Info.Officials.OrderBy(o => o.Position == "Referee" ? 0 : 1))
+                                        {
+                                            <li><span>@official.Name</span> <span class="position">@official.Position</span></li>
+                                        }
+                                    </ul>
+                                </dd>
+                            </div>
+                        }
+                    </dl>
+                </ChildContent>
+            </DashboardCard>
+        </div>
+
+        @if (Game.Injuries.Count > 0)
+        {
+            <div class="slot o-9">
+                <DashboardCard Title="Injury report">
+                    <ChildContent>
+                        @foreach (var team in Game.Injuries)
+                        {
+                            <h3 class="sub-title">@team.TeamAbbreviation</h3>
+                            <ul class="injuries">
+                                @foreach (var injury in team.Injuries)
+                                {
+                                    <li>
+                                        <span class="injury-name">@injury.Name@(injury.Position is null ? "" : $", {injury.Position}")</span>
+                                        <span class="injury-detail">@injury.Detail</span>
+                                        <span class="injury-status @InjuryClass(injury.Status)">@injury.Status</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </ChildContent>
+                </DashboardCard>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public GameDetail Game { get; set; } = default!;
+
+    /// <summary>Team abbreviations to highlight (and to open the box score on), e.g. MIN and CIN.</summary>
+    [Parameter] public IReadOnlyCollection<string> FollowedTeams { get; set; } = [];
+
+    private enum PlayFilter { All, Scoring, Turnovers, BigPlays, ThirdAndFourth, Penalties }
+
+    private string? boxTeam;
+    private bool playsOpen;
+    private PlayFilter playFilter;
+
+    // Open the box score on a followed team when one is playing, otherwise the away team.
+    private string BoxTeam => boxTeam
+        ?? (IsFollowed(Game.Home.Abbreviation) && !IsFollowed(Game.Away.Abbreviation) ? Game.Home.Abbreviation : Game.Away.Abbreviation);
+
+    private bool IsFollowed(string abbreviation) => FollowedTeams.Contains(abbreviation, StringComparer.OrdinalIgnoreCase);
+
+    private RenderFragment TeamBlock(GameTeam team, string side) => @<div class="team @side @(IsFollowed(team.Abbreviation) ? "followed" : "")">
+        @if (team.LogoUrl is string logo)
+        {
+            <img src="@logo" alt="" width="56" height="56" />
+        }
+        <div class="team-text">
+            <span class="team-name">
+                <span class="full">@team.ShortName</span>
+                <span class="abbr">@team.Abbreviation</span>
+                @if (team.HasPossession && Game.State == GameState.Live)
+                {
+                    <span class="possession" title="Has the ball" aria-label="Has the ball"></span>
+                }
+            </span>
+            @if (team.Record is not null)
+            {
+                <span class="team-record">@team.Record</span>
+            }
+        </div>
+    </div>;
+
+    private string ScoreClass(GameTeam team) =>
+        Game.State == GameState.Final ? (team.IsWinner ? "winner" : "loser") : "";
+
+    private IEnumerable<string> MetaParts()
+    {
+        if (Game.Week is int week)
+        {
+            yield return Game.SeasonType == 3 ? "Postseason" : $"Week {week}";
+        }
+        if (Game.Info.Venue is not null) yield return Game.Info.Venue;
+        if (Game.Info.Broadcast is not null) yield return Game.Info.Broadcast;
+    }
+
+    private static string PeriodName(int period) => period switch
+    {
+        1 => "1st quarter",
+        2 => "2nd quarter",
+        3 => "3rd quarter",
+        4 => "4th quarter",
+        5 => "Overtime",
+        _ => $"Overtime {period - 4}"
+    };
+
+    private static string PeriodShort(int period) => period switch
+    {
+        <= 4 => $"Q{Math.Max(period, 1)}",
+        5 => "OT",
+        _ => $"OT{period - 4}"
+    };
+
+    /// <summary>-1 when the away value is better, 1 when the home value is, 0 when even or not comparable.</summary>
+    private static int Better(TeamStatLine stat)
+    {
+        if (stat.AwayNumber is not double a || stat.HomeNumber is not double h || a == h)
+        {
+            return 0;
+        }
+
+        var awayBetter = stat.LowerIsBetter ? a < h : a > h;
+        return awayBetter ? -1 : 1;
+    }
+
+    private IEnumerable<string> LeaderCategories() =>
+        Game.Leaders.SelectMany(t => t.Leaders.Select(l => l.Category)).Distinct();
+
+    private bool Matches(Play play) => playFilter switch
+    {
+        PlayFilter.Scoring => play.IsScoring,
+        PlayFilter.Turnovers => play.IsTurnover,
+        PlayFilter.BigPlays => play.Yards is >= 20,
+        PlayFilter.ThirdAndFourth => play.DownDistance is string d && (d.StartsWith("3rd") || d.StartsWith("4th")),
+        PlayFilter.Penalties => play.IsPenalty,
+        _ => true
+    };
+
+    private static string FilterLabel(PlayFilter filter) => filter switch
+    {
+        PlayFilter.BigPlays => "Big plays (20+)",
+        PlayFilter.ThirdAndFourth => "3rd & 4th down",
+        _ => filter.ToString()
+    };
+
+    private static string PlayClass(Play play) =>
+        play.IsScoring ? "scoring-play" : play.IsTurnover ? "turnover" : play.IsPenalty ? "penalty" : "";
+
+    private static string FormClass(string result) => result switch
+    {
+        "W" => "win",
+        "L" => "loss",
+        _ => ""
+    };
+
+    private static string InjuryClass(string status) => status.ToLowerInvariant() switch
+    {
+        "out" or "injured reserve" => "out",
+        "doubtful" or "questionable" => "doubtful",
+        _ => ""
+    };
+
+    private static string MoneyLine(int value) => value > 0 ? $"+{value}" : value.ToString();
+
+    private static string Pct(double share) =>
+        (Math.Clamp(share, 0, 1) * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "%";
+}

@@ -1,0 +1,861 @@
+/* ---- Scorebug ------------------------------------------------------------ */
+
+.scorebug {
+    background: var(--cc-surface);
+    border: 1px solid var(--cc-border-subtle);
+    border-radius: var(--cc-radius-lg);
+    box-shadow: var(--cc-shadow);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.matchup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.team {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+    .team.home {
+        flex-direction: row-reverse;
+        text-align: right;
+    }
+
+    .team img {
+        flex: none;
+        width: 56px;
+        height: 56px;
+        object-fit: contain;
+    }
+
+.team-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.team-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--cc-text-strong);
+}
+
+.team.home .team-name {
+    flex-direction: row-reverse;
+}
+
+.team.followed .team-name {
+    color: var(--cc-accent-2);
+}
+
+.team-name .abbr {
+    display: none;
+}
+
+.team-record {
+    color: var(--cc-text-muted);
+    font-size: 0.85rem;
+}
+
+.possession {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cc-accent-2);
+}
+
+.score {
+    font-size: 2.6rem;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--cc-text-strong);
+    font-variant-numeric: tabular-nums;
+    min-width: 2ch;
+    text-align: center;
+}
+
+    .score.winner {
+        font-weight: 600;
+    }
+
+    .score.loser {
+        color: var(--cc-text-muted);
+    }
+
+.state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    min-width: 6rem;
+    text-align: center;
+}
+
+.final {
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: var(--cc-text-muted);
+}
+
+.date,
+.kickoff {
+    font-size: 0.8rem;
+    color: var(--cc-text-muted);
+}
+
+.kickoff-time {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--cc-text-strong);
+}
+
+.live {
+    color: var(--cc-danger);
+    font-weight: 600;
+}
+
+    .live::before {
+        content: "";
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        margin-right: 0.35rem;
+        vertical-align: middle;
+    }
+
+.linescore {
+    margin: 1.1rem auto 0;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.9rem;
+}
+
+    .linescore th,
+    .linescore td {
+        padding: 0.3rem 0.7rem;
+        text-align: center;
+        border-bottom: 1px solid var(--cc-border-subtle);
+    }
+
+    .linescore thead th {
+        color: var(--cc-text-faint);
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
+    .linescore tbody th {
+        text-align: left;
+        color: var(--cc-text-muted);
+    }
+
+    .linescore .total {
+        color: var(--cc-text-strong);
+        font-weight: 600;
+    }
+
+.meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 0.5rem;
+    margin: 0.9rem 0 0;
+    font-size: 0.82rem;
+    color: var(--cc-text-muted);
+}
+
+.dot {
+    color: var(--cc-text-faint);
+}
+
+/* ---- Card layout --------------------------------------------------------- */
+
+/* Narrow screens: columns dissolve so every card stacks in reading order (o-1 … o-9). */
+.layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.col {
+    display: contents;
+}
+
+.slot {
+    min-width: 0;
+}
+
+.o-1 { order: 1; }
+.o-2 { order: 2; }
+.o-3 { order: 3; }
+.o-4 { order: 4; }
+.o-5 { order: 5; }
+.o-6 { order: 6; }
+.o-7 { order: 7; }
+.o-8 { order: 8; }
+.o-9 { order: 9; }
+
+@media (min-width: 1100px) {
+    .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+        gap: 1.25rem;
+        align-items: start;
+    }
+
+    .col {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        min-width: 0;
+    }
+}
+
+/* ---- Shared bits --------------------------------------------------------- */
+
+.sub-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cc-text-faint);
+    margin: 1rem 0 0.5rem;
+}
+
+    .sub-title:first-child {
+        margin-top: 0;
+    }
+
+.split-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--cc-surface-raised);
+    overflow: hidden;
+}
+
+    .split-bar.thin {
+        height: 4px;
+        margin-top: 0.3rem;
+    }
+
+    .split-bar .away-share {
+        background: var(--cc-primary);
+    }
+
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.empty {
+    margin: 0.75rem 0 0;
+    color: var(--cc-text-muted);
+}
+
+/* ---- Matchup (pregame) --------------------------------------------------- */
+
+.predictor {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.35rem;
+    color: var(--cc-text-muted);
+    font-size: 0.9rem;
+}
+
+    .predictor strong {
+        color: var(--cc-text-strong);
+    }
+
+.line {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.6rem 1rem;
+    margin: 0;
+}
+
+    .line dt,
+    .info dt {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--cc-text-faint);
+    }
+
+    .line dd,
+    .info dd {
+        margin: 0.1rem 0 0;
+        color: var(--cc-text-strong);
+    }
+
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.4rem;
+}
+
+.form-team {
+    width: 3rem;
+    font-weight: 600;
+    color: var(--cc-text-muted);
+}
+
+.form {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+    .form li {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 3.2rem;
+        padding: 0.25rem 0.4rem;
+        border: 1px solid var(--cc-border-subtle);
+        border-radius: var(--cc-radius-sm);
+        background: var(--cc-surface-raised);
+    }
+
+.form-result {
+    font-weight: 700;
+    color: var(--cc-text-muted);
+}
+
+.form li.win .form-result {
+    color: var(--cc-success);
+}
+
+.form li.loss .form-result {
+    color: var(--cc-danger);
+}
+
+.form-opp {
+    font-size: 0.72rem;
+    color: var(--cc-text-faint);
+}
+
+/* ---- Scoring plays ------------------------------------------------------- */
+
+.scoring {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+    .scoring li {
+        display: grid;
+        grid-template-columns: 24px auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.55rem 0.7rem;
+        background: var(--cc-surface-raised);
+        border: 1px solid var(--cc-border-subtle);
+        border-radius: var(--cc-radius);
+    }
+
+        .scoring li.followed {
+            border-left: 3px solid var(--cc-accent-2);
+        }
+
+    .scoring img {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+    }
+
+.badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--cc-radius-sm);
+    background: var(--cc-primary-soft);
+    color: var(--cc-text);
+}
+
+.scoring-text {
+    font-size: 0.88rem;
+    color: var(--cc-text);
+}
+
+.clock {
+    margin-left: 0.35rem;
+    color: var(--cc-text-faint);
+    font-size: 0.78rem;
+}
+
+.running {
+    white-space: nowrap;
+    font-size: 0.82rem;
+    color: var(--cc-text-strong);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- Box score ----------------------------------------------------------- */
+
+.segmented {
+    display: inline-flex;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius);
+    overflow: hidden;
+}
+
+    .segmented button {
+        background: none;
+        border: none;
+        font: inherit;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--cc-text-muted);
+        padding: 0.35rem 0.9rem;
+        min-height: 2.25rem;
+        cursor: pointer;
+    }
+
+        .segmented button + button {
+            border-left: 1px solid var(--cc-border);
+        }
+
+        .segmented button.selected {
+            background: var(--cc-sidebar-active);
+            color: var(--cc-text-strong);
+        }
+
+.stats {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+    .stats th,
+    .stats td {
+        padding: 0.35rem 0.5rem;
+        text-align: right;
+        white-space: nowrap;
+        border-bottom: 1px solid var(--cc-border-subtle);
+    }
+
+    .stats thead th {
+        color: var(--cc-text-faint);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+    }
+
+    .stats .player {
+        text-align: left;
+        font-weight: 500;
+        color: var(--cc-text-strong);
+    }
+
+    .stats thead .player {
+        color: var(--cc-text-faint);
+    }
+
+    .stats td {
+        color: var(--cc-text);
+    }
+
+    .stats tfoot th,
+    .stats tfoot td {
+        color: var(--cc-text-muted);
+        font-weight: 600;
+        border-bottom: none;
+    }
+
+.jersey {
+    margin-left: 0.3rem;
+    color: var(--cc-text-faint);
+    font-size: 0.75rem;
+    font-weight: 400;
+}
+
+/* ---- Play-by-play -------------------------------------------------------- */
+
+.plays-card {
+    background: linear-gradient(180deg, var(--cc-surface) 0%, rgba(26, 31, 39, 0.92) 100%);
+    border: 1px solid var(--cc-border-subtle);
+    border-radius: var(--cc-radius-lg);
+    box-shadow: var(--cc-shadow);
+    padding: 0.5rem 1.25rem;
+}
+
+.plays-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 0;
+    min-height: 2.75rem;
+    background: none;
+    border: none;
+    font: inherit;
+    color: var(--cc-text);
+    cursor: pointer;
+    text-align: left;
+}
+
+.plays-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--cc-text-strong);
+}
+
+.plays-count {
+    flex: 1;
+    color: var(--cc-text-muted);
+    font-size: 0.85rem;
+}
+
+.chevron {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.15s ease;
+}
+
+.plays-toggle[aria-expanded="true"] .chevron {
+    transform: rotate(90deg);
+}
+
+#play-by-play {
+    padding-bottom: 0.75rem;
+}
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.chip {
+    background: var(--cc-surface-raised);
+    border: 1px solid var(--cc-border-subtle);
+    border-radius: 999px;
+    padding: 0.3rem 0.8rem;
+    min-height: 2.1rem;
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--cc-text-muted);
+    cursor: pointer;
+}
+
+    .chip.selected {
+        background: var(--cc-sidebar-active);
+        border-color: var(--cc-border);
+        color: var(--cc-text-strong);
+    }
+
+.drive + .drive {
+    margin-top: 0.85rem;
+}
+
+.drive-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.6rem;
+    padding: 0.5rem 0.7rem;
+    background: var(--cc-surface-raised);
+    border-radius: var(--cc-radius);
+    font-size: 0.85rem;
+}
+
+    .drive-head img {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+    }
+
+.drive-team {
+    font-weight: 700;
+    color: var(--cc-text-strong);
+}
+
+.drive-result {
+    font-weight: 600;
+    color: var(--cc-text);
+}
+
+.drive.scored .drive-result {
+    color: var(--cc-accent-2);
+}
+
+.drive-summary {
+    color: var(--cc-text-muted);
+}
+
+.drive-start {
+    margin-left: auto;
+    color: var(--cc-text-faint);
+    font-variant-numeric: tabular-nums;
+}
+
+.plays {
+    list-style: none;
+    margin: 0.25rem 0 0;
+    padding: 0;
+}
+
+    .plays li {
+        display: grid;
+        grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+        gap: 0.6rem;
+        padding: 0.45rem 0.7rem;
+        border-bottom: 1px solid var(--cc-border-subtle);
+        font-size: 0.85rem;
+    }
+
+        .plays li.scoring-play {
+            border-left: 3px solid var(--cc-accent-2);
+        }
+
+        .plays li.turnover {
+            border-left: 3px solid var(--cc-danger);
+        }
+
+        .plays li.penalty .play-text {
+            color: var(--cc-warning);
+        }
+
+.play-time {
+    color: var(--cc-text-faint);
+    font-variant-numeric: tabular-nums;
+}
+
+.play-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.down {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cc-text-muted);
+}
+
+.play-text {
+    color: var(--cc-text);
+}
+
+.yards {
+    font-variant-numeric: tabular-nums;
+    color: var(--cc-text-muted);
+    font-weight: 600;
+}
+
+    .yards.big {
+        color: var(--cc-success);
+    }
+
+    .yards.loss {
+        color: var(--cc-danger);
+    }
+
+/* ---- Side column cards --------------------------------------------------- */
+
+.compare-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--cc-text-faint);
+    margin-bottom: 0.35rem;
+}
+
+.compare {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .compare li {
+        padding: 0.45rem 0;
+        border-bottom: 1px solid var(--cc-border-subtle);
+    }
+
+.compare-row {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr) 4.5rem;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+    .compare-row .label {
+        text-align: center;
+        font-size: 0.8rem;
+        color: var(--cc-text-muted);
+    }
+
+    .compare-row .value {
+        font-variant-numeric: tabular-nums;
+        color: var(--cc-text);
+    }
+
+        .compare-row .value:last-child {
+            text-align: right;
+        }
+
+        .compare-row .value.better {
+            color: var(--cc-text-strong);
+            font-weight: 700;
+        }
+
+.leaders,
+.injuries,
+.officials {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .leaders li {
+        display: grid;
+        grid-template-columns: 2.75rem minmax(0, 1fr);
+        gap: 0 0.5rem;
+        padding: 0.3rem 0;
+    }
+
+.leader-team {
+    grid-row: span 2;
+    font-weight: 700;
+    color: var(--cc-text-muted);
+}
+
+.leader-name {
+    color: var(--cc-text-strong);
+    font-weight: 500;
+}
+
+.leader-value {
+    color: var(--cc-text-muted);
+    font-size: 0.82rem;
+}
+
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    margin: 0;
+}
+
+.officials li {
+    font-size: 0.88rem;
+}
+
+.position {
+    color: var(--cc-text-faint);
+    font-size: 0.78rem;
+}
+
+.injuries li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--cc-border-subtle);
+    font-size: 0.86rem;
+}
+
+.injury-name {
+    color: var(--cc-text-strong);
+}
+
+.injury-detail {
+    grid-row: 2;
+    color: var(--cc-text-faint);
+    font-size: 0.78rem;
+}
+
+.injury-status {
+    grid-row: span 2;
+    align-self: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--cc-text-muted);
+}
+
+    .injury-status.out {
+        color: var(--cc-danger);
+    }
+
+    .injury-status.doubtful {
+        color: var(--cc-warning);
+    }
+
+/* ---- Phones -------------------------------------------------------------- */
+
+@media (max-width: 600px) {
+    .matchup {
+        gap: 0.4rem;
+    }
+
+    .team {
+        flex-direction: column;
+        gap: 0.3rem;
+        text-align: center;
+    }
+
+        .team.home {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .team img {
+            width: 40px;
+            height: 40px;
+        }
+
+    .team-name .full {
+        display: none;
+    }
+
+    .team-name .abbr {
+        display: inline;
+    }
+
+    .score {
+        font-size: 2rem;
+    }
+
+    .state {
+        min-width: 4.5rem;
+    }
+
+    .scoring li {
+        grid-template-columns: 24px minmax(0, 1fr) auto;
+    }
+
+    .badge {
+        display: none;
+    }
+}

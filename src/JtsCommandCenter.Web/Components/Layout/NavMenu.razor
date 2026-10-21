@@ -1,3 +1,7 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
 <nav class="nav">
     <div class="nav-section">Overview</div>
     <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="OnNavigate">
@@ -7,30 +11,100 @@
         Dashboard
     </NavLink>
 
-    <div class="nav-section">Sports Center</div>
-    <NavLink class="nav-link" href="sports/football" @onclick="OnNavigate">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4.5 19.5C3 13 7 4.5 19.5 4.5 21 11 17 19.5 4.5 19.5zM9 15l6-6M10.5 10.5l3 3M12.5 8.5l3 3M8.5 12.5l3 3" />
-        </svg>
-        Football
-    </NavLink>
-    <NavLink class="nav-link" href="sports/baseball" @onclick="OnNavigate">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="8.5" />
-            <path d="M7.5 5.5c2.2 3.6 2.2 9.4 0 13M16.5 5.5c-2.2 3.6-2.2 9.4 0 13" />
-        </svg>
-        Baseball
-    </NavLink>
-    <NavLink class="nav-link" href="sports/hockey" @onclick="OnNavigate">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 3l5.5 14H19v3H9.5L4 4.5z" />
-            <ellipse cx="17" cy="14" rx="2.5" ry="1.2" />
-        </svg>
-        Hockey
-    </NavLink>
+    <button class="nav-section nav-group-toggle @(SportsActive && !sportsExpanded ? "has-active" : "")" type="button"
+            aria-expanded="@(sportsExpanded ? "true" : "false")" aria-controls="nav-sports" @onclick="ToggleSportsAsync">
+        Sports Center
+        <svg class="chevron" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+    </button>
+    <div id="nav-sports" class="nav-group" hidden="@(!sportsExpanded)">
+        <NavLink class="nav-link" href="sports/football" @onclick="OnNavigate">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4.5 19.5C3 13 7 4.5 19.5 4.5 21 11 17 19.5 4.5 19.5zM9 15l6-6M10.5 10.5l3 3M12.5 8.5l3 3M8.5 12.5l3 3" />
+            </svg>
+            Football
+        </NavLink>
+        <NavLink class="nav-link" href="sports/baseball" @onclick="OnNavigate">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.5" />
+                <path d="M7.5 5.5c2.2 3.6 2.2 9.4 0 13M16.5 5.5c-2.2 3.6-2.2 9.4 0 13" />
+            </svg>
+            Baseball
+        </NavLink>
+        <NavLink class="nav-link" href="sports/hockey" @onclick="OnNavigate">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 3l5.5 14H19v3H9.5L4 4.5z" />
+                <ellipse cx="17" cy="14" rx="2.5" ry="1.2" />
+            </svg>
+            Hockey
+        </NavLink>
+    </div>
 </nav>
 
 @code {
+    private const string SportsExpandedKey = "nav:sports-expanded";
+
     /// <summary>Raised when a link is clicked so the layout can close the mobile drawer.</summary>
     [Parameter] public EventCallback OnNavigate { get; set; }
+
+    private bool sportsExpanded;
+    private bool wasSportsActive;
+
+    private bool SportsActive => Navigation.ToBaseRelativePath(Navigation.Uri).StartsWith("sports", StringComparison.OrdinalIgnoreCase);
+
+    protected override void OnInitialized()
+    {
+        // Prerendering can't read localStorage, so start open only when a Sports Center page is showing.
+        sportsExpanded = wasSportsActive = SportsActive;
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            var stored = await JS.InvokeAsync<string?>("localStorage.getItem", SportsExpandedKey);
+            if (bool.TryParse(stored, out var expanded) && expanded != sportsExpanded && !SportsActive)
+            {
+                sportsExpanded = expanded;
+                StateHasChanged();
+            }
+        }
+        catch (JSException)
+        {
+            // Storage blocked (private mode, policy); keep the default.
+        }
+    }
+
+    private async Task ToggleSportsAsync()
+    {
+        sportsExpanded = !sportsExpanded;
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", SportsExpandedKey, sportsExpanded.ToString());
+        }
+        catch (JSException)
+        {
+            // Not remembered this time; the toggle itself still works.
+        }
+    }
+
+    // Arriving at a Sports Center page from elsewhere (e.g. a dashboard link) opens its group; moving
+    // between Sports Center pages leaves the group as the user set it.
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        var nowActive = SportsActive;
+        if (nowActive && !wasSportsActive && !sportsExpanded)
+        {
+            sportsExpanded = true;
+            InvokeAsync(StateHasChanged);
+        }
+        wasSportsActive = nowActive;
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
 }
