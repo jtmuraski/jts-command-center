@@ -1,4 +1,5 @@
 using JtsCommandCenter.Web.Components;
+using JtsCommandCenter.Web.Services.Sports;
 using JtsCommandCenter.Web.Services.Weather;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,13 @@ builder.Services.Configure<WeatherOptions>(builder.Configuration.GetSection(Weat
 builder.Services.AddHttpClient<IWeatherService, OpenMeteoWeatherService>(client =>
 {
     client.BaseAddress = new Uri("https://api.open-meteo.com/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
+builder.Services.Configure<SportsOptions>(builder.Configuration.GetSection(SportsOptions.SectionName));
+builder.Services.AddHttpClient<ISportsService, EspnSportsService>(client =>
+{
+    client.BaseAddress = new Uri("https://site.api.espn.com/");
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 

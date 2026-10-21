@@ -31,6 +31,7 @@ src/
       Shared/                    Reusable components (DashboardCard wrapper, WeatherIcon)
     Services/
       Weather/                   IWeatherService + Open-Meteo implementation, options, WMO code mapping
+      Sports/                    ISportsService + ESPN implementation, options, ScheduleMath (series logic)
     wwwroot/app.css              Global theme: color tokens + base styles
 ```
 
@@ -58,12 +59,13 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 - Component-specific styles go in a scoped `Component.razor.css` file next to the component. Use `::deep` when styling child components (e.g. `NavLink`).
 - Layout must stay responsive: below 900px the sidebar becomes an off-canvas drawer toggled from the top bar.
 - Dashboard (`Pages/Home.razor`) uses CSS grid areas: 1 column on phones (to-do first), 2 columns from 720px, 3 columns from 1200px. New cards wrap their content in `<DashboardCard Title="...">` and get a grid area in `Home.razor.css`.
-- Dashboard cards other than Weather still use hard-coded placeholder data in their `@code` blocks. When wiring real data, move it behind an injected service (Weather is the reference pattern).
+- Dashboard cards other than Weather and Sports still use hard-coded placeholder data in their `@code` blocks. When wiring real data, move it behind an injected service (Weather is the reference pattern).
 - New sections get a link in `Components/Layout/NavMenu.razor` (group under a `nav-section` heading).
 
 ## Integrations
 
 - **Weather:** [Open-Meteo](https://open-meteo.com/) forecast API, free and with no API key. Configured under `Weather` in `appsettings.json` (location, coordinates, temperature/wind/precipitation units, `CacheMinutes`, `RefreshMinutes`). The card shows current conditions, feels-like, wind/gusts, humidity, precipitation chance and snowfall (today and per forecast day), and sunrise/sunset. `OpenMeteoWeatherService` is a typed `HttpClient` that caches the report in `IMemoryCache`; `WeatherCard` re-requests on a `PeriodicTimer` while open and keeps showing the last good report if a refresh fails. Times shown come from the API in the location's own time zone, not server time.
+- **Sports:** ESPN's public, undocumented site API (`site.api.espn.com`, no API key). Configured under `Sports` in `appsettings.json`: a `Teams` list (ESPN sport/league/team slugs, a `Display` mode, `AlwaysShowTies`), plus `TimeZone`, `CacheMinutes`, `LiveCacheSeconds`, `RefreshMinutes`. Each team's regular-season and postseason schedules are fetched (`teams/{team}/schedule?seasontype=2|3`) and parsed as loose JSON, since shapes vary by sport. `LastAndNext` mode (Vikings, Wild) shows the last final and the next or live game. `Series` mode (Twins) shows every game of the current series plus the next series. Between series, the one that just finished stays current until the next one's first game day. When a team has nothing left to play, the section shows a season recap instead: the record, plus the division place and full division name from `apis/v2/.../standings`. One team failing shows "unavailable" for that section only. While a game is live, the cache drops to `LiveCacheSeconds` and the card re-checks every minute.
 
 ## Code conventions
 
