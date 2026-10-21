@@ -1,0 +1,45 @@
+@if (Articles.Count == 0)
+{
+    <p class="empty">@EmptyText</p>
+}
+else
+{
+    <ul class="stories">
+        @foreach (var article in Articles)
+        {
+            <li>
+                <a class="story" href="@article.Url" target="_blank" rel="noopener">
+                    <span class="text">
+                        <span class="source">@article.Source · @Age(article.Published)</span>
+                        <span class="headline">@article.Title</span>
+                        @if (ShowSummaries && article.Summary is string summary)
+                        {
+                            <span class="summary">@summary</span>
+                        }
+                    </span>
+                </a>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<NewsArticle> Articles { get; set; } = [];
+
+    [Parameter] public bool ShowSummaries { get; set; } = true;
+
+    [Parameter] public string EmptyText { get; set; } = "No stories right now.";
+
+    private static string Age(DateTimeOffset published)
+    {
+        var age = DateTimeOffset.UtcNow - published;
+        return age.TotalMinutes switch
+        {
+            < 1 => "just now",
+            < 60 => $"{(int)age.TotalMinutes} min ago",
+            < 60 * 24 => $"{(int)age.TotalHours} hr ago",
+            < 60 * 24 * 7 => $"{(int)age.TotalDays}d ago",
+            _ => published.ToLocalTime().ToString("MMM d")
+        };
+    }
+}

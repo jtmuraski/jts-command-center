@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using static JtsCommandCenter.Web.Services.Sports.EspnJson;
 
 namespace JtsCommandCenter.Web.Services.Sports;
 
@@ -21,7 +22,7 @@ public sealed partial class EspnSportsService(
     private const int Postseason = 3;
 
     private readonly SportsOptions settings = options.Value;
-    private readonly TimeZoneInfo zone = ResolveZone(options.Value.TimeZone);
+    private readonly TimeZoneInfo zone = EspnJson.ResolveZone(options.Value.TimeZone);
 
     public async Task<SportsReport> GetReportAsync(CancellationToken cancellationToken = default)
     {
@@ -72,7 +73,7 @@ public sealed partial class EspnSportsService(
 
         logger.LogInformation("Fetching {League} schedule for {Team} from ESPN", team.League, team.Team);
 
-        var regularTask = GetJsonAsync($"{schedulePath}?seasontype={RegularSeason}", cancellationToken);
+        var regularTask = http.GetJsonAsync($"{schedulePath}?seasontype={RegularSeason}", cancellationToken);
         var postseasonTask = GetPostseasonAsync(schedulePath, cancellationToken);
         using var regular = await regularTask;
         using var postseason = await postseasonTask;
@@ -151,7 +152,7 @@ public sealed partial class EspnSportsService(
     {
         try
         {
-            return await GetJsonAsync($"{schedulePath}?seasontype={Postseason}", cancellationToken);
+            return await http.GetJsonAsync($"{schedulePath}?seasontype={Postseason}", cancellationToken);
         }
         catch (HttpRequestException ex)
         {
@@ -168,7 +169,7 @@ public sealed partial class EspnSportsService(
         {
             var url = $"apis/v2/sports/{team.Sport}/{team.League}/standings?seasontype={RegularSeason}&level=3"
                 + (year is int y ? $"&season={y}" : "");
-            using var standings = await GetJsonAsync(url, cancellationToken);
+            using var standings = await http.GetJsonAsync(url, cancellationToken);
             return FindGroupContaining(standings.RootElement, teamId);
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or KeyNotFoundException)
@@ -205,14 +206,6 @@ public sealed partial class EspnSportsService(
         return null;
     }
 
-    private async Task<JsonDocument> GetJsonAsync(string url, CancellationToken cancellationToken)
-    {
-        using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-    }
-
     private sealed record ParsedGame(Game Game, string? Record);
 
     private IEnumerable<ParsedGame> ParseGames(JsonElement root, string teamId)
@@ -239,7 +232,7 @@ public sealed partial class EspnSportsService(
             }
 
             var status = competition.GetProperty("status").GetProperty("type");
-            var state = ParseState(status);
+            var state = EspnJson.ParseState(status);
             var start = DateTimeOffset.Parse(Str(ev, "date") ?? Str(competition, "date")!, CultureInfo.InvariantCulture);
             var timeValid = !competition.TryGetProperty("timeValid", out var tv) || tv.ValueKind != JsonValueKind.False;
             var seasonType = ev.TryGetProperty("seasonType", out var st) ? Int(st, "type") : null;
@@ -253,28 +246,13 @@ public sealed partial class EspnSportsService(
                 Str(status, "shortDetail") ?? Str(status, "description") ?? "",
                 Str(us, "homeAway") == "home",
                 ParseOpponent(them.GetProperty("team")),
-                state is GameState.Live or GameState.Final ? ParseScore(us) : null,
-                state is GameState.Live or GameState.Final ? ParseScore(them) : null,
+                state is GameState.Live or GameState.Final ? EspnJson.ParseScore(us) : null,
+                state is GameState.Live or GameState.Final ? EspnJson.ParseScore(them) : null,
                 seasonType == Postseason,
                 label);
 
             yield return new ParsedGame(game, state == GameState.Final ? ParseRecord(us) : null);
         }
-    }
-
-    private static GameState ParseState(JsonElement statusType)
-    {
-        if (statusType.TryGetProperty("completed", out var completed) && completed.ValueKind == JsonValueKind.True)
-        {
-            return GameState.Final;
-        }
-
-        return Str(statusType, "state") switch
-        {
-            "in" => GameState.Live,
-            "post" => GameState.Postponed, // over but not completed: postponed, suspended, or canceled
-            _ => GameState.Scheduled
-        };
     }
 
     private static Opponent ParseOpponent(JsonElement team) => new(
@@ -301,23 +279,6 @@ public sealed partial class EspnSportsService(
         }
 
         return Str(team, "logo");
-    }
-
-    // Schedule feeds use { "value": 3.0, "displayValue": "3" }; scoreboard feeds use a plain string.
-    private static int? ParseScore(JsonElement competitor)
-    {
-        if (!competitor.TryGetProperty("score", out var score))
-        {
-            return null;
-        }
-
-        return score.ValueKind switch
-        {
-            JsonValueKind.Object when score.TryGetProperty("value", out var v) && v.TryGetDouble(out var d) => (int)d,
-            JsonValueKind.String when int.TryParse(score.GetString(), out var i) => i,
-            JsonValueKind.Number => score.GetInt32(),
-            _ => null
-        };
     }
 
     private static string? ParseRecord(JsonElement competitor)
@@ -362,21 +323,4 @@ public sealed partial class EspnSportsService(
 
     private DateTime Now() => TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, zone).DateTime;
 
-    private static TimeZoneInfo ResolveZone(string id)
-    {
-        try
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById(id);
-        }
-        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
-        {
-            return TimeZoneInfo.Local;
-        }
-    }
-
-    private static string? Str(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-
-    private static int? Int(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var i) ? i : null;
 }

@@ -1,0 +1,92 @@
+@page "/sports/football"
+@implements IDisposable
+@inject ISportsNewsService NewsService
+@inject ILogger<Football> Logger
+
+<PageTitle>Football · Command Center</PageTitle>
+
+<header class="sports-header">
+    <h1>Football</h1>
+    <p class="cc-muted">NFL scores, schedule, and news.</p>
+</header>
+
+<div class="sports-page">
+    <div class="slot slot-games">
+        <ScoreboardCard League="@League" />
+    </div>
+
+    <div class="slot slot-team">
+        <DashboardCard Title="@($"{news?.TeamName ?? "Team"} news")">
+            <ChildContent>
+                @if (news is not null)
+                {
+                    <NewsList Articles="news.TeamNews" ShowSummaries="false" EmptyText="No team stories right now." />
+                }
+                else
+                {
+                    @NewsState
+                }
+            </ChildContent>
+        </DashboardCard>
+    </div>
+
+    <div class="slot slot-news">
+        <DashboardCard Title="@($"{news?.LeagueName ?? "League"} news")">
+            <ChildContent>
+                @if (news is not null)
+                {
+                    <NewsList Articles="news.Headlines" />
+                    @if (news.FailedSources.Count > 0)
+                    {
+                        <p class="sources-note">Couldn't reach @string.Join(", ", news.FailedSources) this time.</p>
+                    }
+                }
+                else
+                {
+                    @NewsState
+                }
+            </ChildContent>
+        </DashboardCard>
+    </div>
+</div>
+
+@code {
+    private const string League = "nfl";
+
+    private readonly CancellationTokenSource cts = new();
+    private LeagueNews? news;
+    private string? error;
+
+    private RenderFragment NewsState => error is null
+        ? @<p class="cc-muted state">Loading stories…</p>
+        : @<div class="state">
+              <p class="cc-muted">News is unavailable right now.</p>
+              <button class="cc-btn cc-btn-ghost" type="button" @onclick="LoadNewsAsync">Try again</button>
+          </div>;
+
+    protected override Task OnInitializedAsync() => LoadNewsAsync();
+
+    private async Task LoadNewsAsync()
+    {
+        try
+        {
+            news = await NewsService.GetNewsAsync(League, cts.Token);
+            error = null;
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // Navigated away mid-request.
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to load {League} news", League);
+            error = ex.Message;
+        }
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}

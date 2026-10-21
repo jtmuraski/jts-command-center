@@ -24,6 +24,21 @@ builder.Services.AddHttpClient<ISportsService, EspnSportsService>(client =>
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
+builder.Services.Configure<SportsCenterOptions>(builder.Configuration.GetSection(SportsCenterOptions.SectionName));
+builder.Services.AddHttpClient<IScoreboardService, EspnScoreboardService>(client =>
+{
+    client.BaseAddress = new Uri("https://site.api.espn.com/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddHttpClient<ISportsNewsService, SportsNewsService>(client =>
+{
+    // ESPN relative URLs resolve against this; RSS feeds are fetched by absolute URL.
+    client.BaseAddress = new Uri("https://site.api.espn.com/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+    // Some feed hosts reject requests that carry no user agent.
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("JtsCommandCenter/1.0 (+personal dashboard)");
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

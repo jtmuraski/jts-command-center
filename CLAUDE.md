@@ -26,12 +26,13 @@ src/
       App.razor                  HTML shell, head, scripts
       Routes.razor               Router
       Layout/                    MainLayout (sidebar + topbar shell), NavMenu, ReconnectModal
-      Pages/                     Routable pages (Home = dashboard)
+      Pages/                     Routable pages (Home = dashboard; Sports/ = Sports Center pages)
+      SportsCenter/              Sports Center components (ScoreboardCard, NewsList)
       Dashboard/                 Dashboard cards (Weather, Todo, Projects, Sports, News)
       Shared/                    Reusable components (DashboardCard wrapper, WeatherIcon)
     Services/
       Weather/                   IWeatherService + Open-Meteo implementation, options, WMO code mapping
-      Sports/                    ISportsService + ESPN implementation, options, ScheduleMath (series logic)
+      Sports/                    ESPN team schedules (dashboard card), weekly scoreboards, merged news feeds
     wwwroot/app.css              Global theme: color tokens + base styles
 ```
 
@@ -66,6 +67,7 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 
 - **Weather:** [Open-Meteo](https://open-meteo.com/) forecast API, free and with no API key. Configured under `Weather` in `appsettings.json` (location, coordinates, temperature/wind/precipitation units, `CacheMinutes`, `RefreshMinutes`). The card shows current conditions, feels-like, wind/gusts, humidity, precipitation chance and snowfall (today and per forecast day), and sunrise/sunset. `OpenMeteoWeatherService` is a typed `HttpClient` that caches the report in `IMemoryCache`; `WeatherCard` re-requests on a `PeriodicTimer` while open and keeps showing the last good report if a refresh fails. Times shown come from the API in the location's own time zone, not server time.
 - **Sports:** ESPN's public, undocumented site API (`site.api.espn.com`, no API key). Configured under `Sports` in `appsettings.json`: a `Teams` list (ESPN sport/league/team slugs, a `Display` mode, `AlwaysShowTies`), plus `TimeZone`, `CacheMinutes`, `LiveCacheSeconds`, `RefreshMinutes`. Each team's regular-season and postseason schedules are fetched (`teams/{team}/schedule?seasontype=2|3`) and parsed as loose JSON, since shapes vary by sport. `LastAndNext` mode (Vikings, Wild) shows the last final and the next or live game. `Series` mode (Twins) shows every game of the current series plus the next series. Between series, the one that just finished stays current until the next one's first game day. When a team has nothing left to play, the section shows a season recap instead: the record, plus the division place and full division name from `apis/v2/.../standings`. One team failing shows "unavailable" for that section only. While a game is live, the cache drops to `LiveCacheSeconds` and the card re-checks every minute.
+- **Sports Center** (`/sports/football`, `/sports/baseball`, `/sports/hockey`; Baseball and Hockey are placeholders): configured under `SportsCenter:Leagues` keyed by ESPN league slug. `EspnScoreboardService` loads a league week (`scoreboard?seasontype=&week=`) and the season calendar used for paging (regular season and postseason only). Completed weeks are cached longer and live weeks shorter. `ScoreboardCard` pins games involving `PinnedTeams` (Vikings, Bengals) at the top, and also leaves them in their normal day group. It shows a pinned team's bye week too. `SportsNewsService` merges ESPN's league news with RSS/Atom `Feeds` (deduped by title, `ExcludeKeywords` filters sportsbook promos). Team news (`FocusTeam`) comes from the team's own feeds, ESPN articles tagged with the team (only when the story is about at most two teams or names the team), and league-feed headlines that contain a `Keywords` entry. ESPN's `news?team=` filter is ignored by the API, so don't rely on it. Feed requests send a User-Agent because some hosts block requests without one.
 
 ## Code conventions
 

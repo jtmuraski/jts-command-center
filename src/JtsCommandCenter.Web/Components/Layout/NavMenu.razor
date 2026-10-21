@@ -6,6 +6,28 @@
         </svg>
         Dashboard
     </NavLink>
+
+    <div class="nav-section">Sports Center</div>
+    <NavLink class="nav-link" href="sports/football" @onclick="OnNavigate">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4.5 19.5C3 13 7 4.5 19.5 4.5 21 11 17 19.5 4.5 19.5zM9 15l6-6M10.5 10.5l3 3M12.5 8.5l3 3M8.5 12.5l3 3" />
+        </svg>
+        Football
+    </NavLink>
+    <NavLink class="nav-link" href="sports/baseball" @onclick="OnNavigate">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M7.5 5.5c2.2 3.6 2.2 9.4 0 13M16.5 5.5c-2.2 3.6-2.2 9.4 0 13" />
+        </svg>
+        Baseball
+    </NavLink>
+    <NavLink class="nav-link" href="sports/hockey" @onclick="OnNavigate">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 3l5.5 14H19v3H9.5L4 4.5z" />
+            <ellipse cx="17" cy="14" rx="2.5" ry="1.2" />
+        </svg>
+        Hockey
+    </NavLink>
 </nav>
 
 @code {

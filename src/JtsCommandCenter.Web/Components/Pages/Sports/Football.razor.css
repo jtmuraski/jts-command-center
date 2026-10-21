@@ -1,0 +1,47 @@
+/* Phones and tablets: one column, scores first. */
+.sports-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+        "games"
+        "team"
+        "news";
+    gap: 1rem;
+}
+
+.slot {
+    min-width: 0;
+}
+
+.slot-games { grid-area: games; }
+.slot-team { grid-area: team; }
+.slot-news { grid-area: news; }
+
+/* Laptop / desktop: scores on the left, team news over league news on the right. */
+@media (min-width: 1100px) {
+    .sports-page {
+        grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+        grid-template-rows: auto 1fr;
+        grid-template-areas:
+            "games team"
+            "games news";
+        gap: 1.25rem;
+        align-items: start;
+    }
+}
+
+.sources-note {
+    margin: 0.75rem 0 0;
+    font-size: 0.75rem;
+    color: var(--cc-warning);
+}
+
+.state {
+    margin: 0;
+    padding: 1.5rem 0;
+    text-align: center;
+}
+
+    .state p {
+        margin: 0 0 0.75rem;
+    }

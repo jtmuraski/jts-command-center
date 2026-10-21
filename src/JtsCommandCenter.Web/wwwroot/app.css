@@ -131,6 +131,15 @@ code, pre {
     color: var(--cc-text-muted);
 }
 
+/* Title block at the top of a section page (Sports Center pages). */
+.sports-header {
+    margin-bottom: 1.5rem;
+}
+
+    .sports-header p {
+        margin: 0;
+    }
+
 .cc-btn {
     display: inline-flex;
     align-items: center;
