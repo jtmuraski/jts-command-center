@@ -25,3 +25,18 @@
     stroke: var(--cc-text);
     stroke-width: 3.5;
 }
+
+.wx-moon {
+    stroke: var(--cc-text-muted);
+    stroke-width: 2.25;
+}
+
+.wx-fog {
+    stroke: var(--cc-text-muted);
+    stroke-width: 2.25;
+}
+
+.wx-bolt {
+    stroke: var(--cc-warning);
+    stroke-width: 2.25;
+}

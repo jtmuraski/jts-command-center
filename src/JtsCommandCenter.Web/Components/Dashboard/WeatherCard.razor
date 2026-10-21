@@ -1,44 +1,137 @@
-<DashboardCard Title="Weather">
-    <HeaderContent>@location</HeaderContent>
-    <ChildContent>
-        <div class="current">
-            <div>
-                <div class="temp">@currentTemp°<span class="unit">F</span></div>
-                <div class="condition">Partly Cloudy</div>
-                <div class="hilo">H @currentHigh° · L @currentLow°</div>
-            </div>
-            <WeatherIcon Condition="WeatherCondition.PartlyCloudy" Size="84" />
-        </div>
+@using Microsoft.Extensions.Options
+@implements IDisposable
+@inject IWeatherService WeatherService
+@inject IOptions<WeatherOptions> Options
+@inject ILogger<WeatherCard> Logger
 
-        <ul class="forecast">
-            @foreach (var day in forecast)
-            {
-                <li>
-                    <span class="day">@day.Day</span>
-                    <WeatherIcon Condition="day.Condition" Size="30" />
-                    <span class="high">@day.High°</span>
-                    <span class="low">@day.Low°</span>
-                </li>
-            }
-        </ul>
+<DashboardCard Title="Weather">
+    <HeaderContent>@Options.Value.LocationName</HeaderContent>
+    <ChildContent>
+        @if (report is not null)
+        {
+            <div class="current">
+                <div>
+                    <div class="temp">@report.Current.Temperature°<span class="unit">@Unit</span></div>
+                    <div class="condition">@report.Current.Description</div>
+                    <div class="hilo">H @report.Current.High° · L @report.Current.Low°</div>
+                </div>
+                <WeatherIcon Condition="report.Current.Condition" IsNight="!report.Current.IsDay" Size="84" />
+            </div>
+
+            <ul class="forecast">
+                @foreach (var day in report.Forecast)
+                {
+                    <li title="@day.Description">
+                        <span class="day">@day.Date.ToString("ddd")</span>
+                        <WeatherIcon Condition="day.Condition" Size="30" />
+                        <span class="high">@day.High°</span>
+                        <span class="low">@day.Low°</span>
+                    </li>
+                }
+            </ul>
+
+            <div class="footer">
+                @if (error is not null)
+                {
+                    <span class="stale">Couldn't refresh · showing last update</span>
+                }
+                else
+                {
+                    <span>As of @report.ObservedAt.ToString("h:mm tt")</span>
+                }
+                <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
+            </div>
+        }
+        else if (error is not null)
+        {
+            <div class="state">
+                <p>Weather is unavailable right now.</p>
+                <button class="cc-btn cc-btn-ghost" type="button" @onclick="RetryAsync" disabled="@loading">
+                    @(loading ? "Retrying…" : "Try again")
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="state" aria-busy="true">
+                <p>Loading weather…</p>
+            </div>
+        }
     </ChildContent>
 </DashboardCard>
 
 @code {
-    // Placeholder data until a weather service is wired up.
-    private readonly string location = "Howard Lake, MN";
-    private readonly int currentTemp = 48;
-    private readonly int currentHigh = 52;
-    private readonly int currentLow = 31;
+    private readonly CancellationTokenSource cts = new();
+    private WeatherReport? report;
+    private string? error;
+    private bool loading;
 
-    private readonly ForecastDay[] forecast =
-    [
-        new("Mon", WeatherCondition.PartlyCloudy, 50, 32),
-        new("Tue", WeatherCondition.Sunny, 54, 30),
-        new("Wed", WeatherCondition.Cloudy, 47, 29),
-        new("Thu", WeatherCondition.Rain, 44, 33),
-        new("Fri", WeatherCondition.Snow, 36, 24),
-    ];
+    private string Unit => Options.Value.TemperatureUnit.StartsWith("c", StringComparison.OrdinalIgnoreCase) ? "C" : "F";
 
-    private sealed record ForecastDay(string Day, WeatherCondition Condition, int High, int Low);
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // OnAfterRender only runs once the circuit is interactive (not during prerendering),
+        // so the refresh loop starts exactly once per open dashboard.
+        if (firstRender)
+        {
+            _ = RefreshLoopAsync();
+        }
+    }
+
+    private async Task RefreshLoopAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(Options.Value.RefreshMinutes));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cts.Token))
+            {
+                await InvokeAsync(async () =>
+                {
+                    await LoadAsync();
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Component disposed (page closed or navigated away).
+        }
+    }
+
+    private async Task RetryAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        try
+        {
+            report = await WeatherService.GetReportAsync(cts.Token);
+            error = null;
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // Disposed mid-request; nothing to update.
+        }
+        catch (Exception ex)
+        {
+            // Keep showing the last good report, if any, and flag it as stale.
+            Logger.LogWarning(ex, "Failed to load weather");
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
 }
