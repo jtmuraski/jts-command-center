@@ -1,10 +1,20 @@
 using JtsCommandCenter.Web.Components;
+using JtsCommandCenter.Web.Services.Weather;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddMemoryCache();
+
+builder.Services.Configure<WeatherOptions>(builder.Configuration.GetSection(WeatherOptions.SectionName));
+builder.Services.AddHttpClient<IWeatherService, OpenMeteoWeatherService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.open-meteo.com/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 
 var app = builder.Build();
 
