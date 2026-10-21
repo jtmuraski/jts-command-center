@@ -1,4 +1,4 @@
-namespace JtsCommandCenter.Web.Services.Weather;
+namespace JtsCommandCenter.Core.Weather;
 
 /// <summary>Current conditions plus a short daily forecast for one location.</summary>
 /// <param name="ObservedAt">Local time (at the location) the current conditions apply to.</param>

@@ -1,4 +1,4 @@
-namespace JtsCommandCenter.Web.Services.Weather;
+namespace JtsCommandCenter.Core.Weather;
 
 public interface IWeatherService
 {

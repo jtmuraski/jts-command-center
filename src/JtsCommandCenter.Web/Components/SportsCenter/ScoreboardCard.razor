@@ -1,0 +1,323 @@
+@using Microsoft.Extensions.Options
+@implements IDisposable
+@inject IScoreboardService Scoreboards
+@inject IOptions<SportsCenterOptions> Options
+@inject ILogger<ScoreboardCard> Logger
+@inject NavigationManager Navigation
+
+<DashboardCard Title="Games">
+    <HeaderContent>
+        @if (scoreboard?.HasLiveGame == true)
+        {
+            <span class="live">Live</span>
+        }
+    </HeaderContent>
+    <ChildContent>
+        @if (scoreboard is not null)
+        {
+            <div class="pager">
+                <button class="cc-btn cc-btn-ghost page-btn" type="button" aria-label="Previous week"
+                        disabled="@(scoreboard.Previous is null || loading)" @onclick="() => GoToAsync(scoreboard.Previous)">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+                </button>
+                <div class="week">
+                    <span class="week-label">@scoreboard.Week.Label</span>
+                    <span class="week-dates">@WeekDates(scoreboard.Week)</span>
+                </div>
+                <button class="cc-btn cc-btn-ghost page-btn" type="button" aria-label="Next week"
+                        disabled="@(scoreboard.Next is null || loading)" @onclick="() => GoToAsync(scoreboard.Next)">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+                </button>
+            </div>
+            @if (selected is not null)
+            {
+                <button class="this-week" type="button" @onclick="() => GoToAsync(null)" disabled="@loading">Back to this week</button>
+            }
+
+            @if (pinnedGames.Count > 0 || pinnedByes.Count > 0)
+            {
+                <section class="day pinned">
+                    <h3 class="day-label">Your teams</h3>
+                    <div class="games">
+                        @foreach (var game in pinnedGames)
+                        {
+                            @GameTile(game, showDay: true)
+                        }
+                        @foreach (var bye in pinnedByes)
+                        {
+                            <article class="game bye">
+                                <div class="team">
+                                    @if (bye.LogoUrl is string logo)
+                                    {
+                                        <img src="@logo" alt="" width="28" height="28" loading="lazy" />
+                                    }
+                                    <span class="name">@bye.Name</span>
+                                </div>
+                                <div class="meta">Bye week</div>
+                            </article>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (scoreboard.Games.Count == 0)
+            {
+                <p class="note">No games this week.</p>
+            }
+
+            @foreach (var day in scoreboard.Games.GroupBy(g => g.Start.Date))
+            {
+                <section class="day">
+                    <h3 class="day-label">@day.Key.ToString("dddd, MMM d")</h3>
+                    <div class="games">
+                        @foreach (var game in day)
+                        {
+                            @GameTile(game)
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (scoreboard.TeamsOnBye.Count > 0)
+            {
+                <p class="byes"><span>On bye:</span> @string.Join(", ", scoreboard.TeamsOnBye.Select(t => t.Name))</p>
+            }
+
+            <div class="footer">
+                @if (error is not null)
+                {
+                    <span class="stale">Couldn't load that week · showing @scoreboard.Week.Label</span>
+                }
+                else
+                {
+                    <span>As of @scoreboard.UpdatedAt.ToString("h:mm tt")</span>
+                }
+                <a href="https://www.espn.com/@League/scoreboard" target="_blank" rel="noopener">ESPN</a>
+            </div>
+        }
+        else if (error is not null)
+        {
+            <div class="state">
+                <p>Scores are unavailable right now.</p>
+                <button class="cc-btn cc-btn-ghost" type="button" @onclick="() => LoadAsync()" disabled="@loading">
+                    @(loading ? "Retrying…" : "Try again")
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="state" aria-busy="true">
+                <p>Loading games…</p>
+            </div>
+        }
+    </ChildContent>
+</DashboardCard>
+
+@code {
+    private static readonly TimeSpan Tick = TimeSpan.FromMinutes(1);
+
+    /// <summary>ESPN league slug, matching a key under SportsCenter:Leagues ("nfl").</summary>
+    [Parameter, EditorRequired] public string League { get; set; } = string.Empty;
+
+    /// <summary>Route prefix for a game's detail page ("sports/football/game"); tiles link to "{prefix}/{id}". Null for no links.</summary>
+    [Parameter] public string? GameLinkBase { get; set; }
+
+    /// <summary>The hosting page's route ("sports/football"); when set, paging keeps the week in its query string.</summary>
+    [Parameter] public string? PagePath { get; set; }
+
+    /// <summary>Week to open on (from the page's query string); ESPN's current week when null.</summary>
+    [Parameter] public int? InitialSeasonType { get; set; }
+
+    [Parameter] public int? InitialWeek { get; set; }
+
+    private readonly CancellationTokenSource cts = new();
+    private WeekScoreboard? scoreboard;
+    private WeekRef? selected;
+    private WeekRef? currentWeek;
+    private List<ScoreboardGame> pinnedGames = [];
+    private List<ByeTeam> pinnedByes = [];
+    private string? error;
+    private bool loading;
+    private DateTime lastLoad;
+
+    private List<string> PinnedTeams =>
+        Options.Value.Leagues.TryGetValue(League, out var league) ? league.PinnedTeams : [];
+
+    protected override Task OnInitializedAsync() =>
+        LoadAsync(InitialSeasonType is int type && InitialWeek is int week ? new WeekRef(type, week, "", default, default) : null);
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // OnAfterRender only runs once the circuit is interactive (not during prerendering),
+        // so the refresh loop starts exactly once per open page.
+        if (firstRender)
+        {
+            _ = RefreshLoopAsync();
+        }
+    }
+
+    private async Task RefreshLoopAsync()
+    {
+        using var timer = new PeriodicTimer(Tick);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cts.Token))
+            {
+                // Finished weeks never change; otherwise refresh every minute while live, or every few minutes.
+                var due = scoreboard is { IsComplete: false }
+                    && (scoreboard.HasLiveGame || DateTime.UtcNow - lastLoad >= TimeSpan.FromMinutes(Options.Value.ScoreboardCacheMinutes));
+                if (!due)
+                {
+                    continue;
+                }
+
+                await InvokeAsync(async () =>
+                {
+                    await LoadAsync(selected);
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Component disposed (page closed or navigated away).
+        }
+    }
+
+    private async Task GoToAsync(WeekRef? week)
+    {
+        await LoadAsync(week);
+
+        // Keep the week in the URL so the back button from a game page returns here.
+        if (PagePath is not null && error is null)
+        {
+            Navigation.NavigateTo(selected is null ? PagePath : $"{PagePath}?type={selected.SeasonType}&week={selected.Week}", replace: true);
+        }
+    }
+
+    private async Task LoadAsync(WeekRef? week = null)
+    {
+        loading = true;
+        try
+        {
+            var result = await Scoreboards.GetWeekAsync(League, week, cts.Token);
+
+            if (week is null)
+            {
+                currentWeek = result.Week;
+            }
+            else
+            {
+                // Opened on a specific week: still learn which week is current, for "Back to this week".
+                currentWeek ??= (await Scoreboards.GetWeekAsync(League, null, cts.Token)).Week;
+            }
+
+            // Paging back to the week ESPN considers current is the same as "this week".
+            selected = week is null || result.Week == currentWeek ? null : week;
+            scoreboard = result;
+            pinnedGames = result.Games.Where(g => g.Involves(PinnedTeams)).ToList();
+            pinnedByes = result.TeamsOnBye.Where(t => PinnedTeams.Contains(t.Abbreviation, StringComparer.OrdinalIgnoreCase)).ToList();
+            error = null;
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // Disposed mid-request; nothing to update.
+        }
+        catch (Exception ex)
+        {
+            // Keep showing the last good week, if any, and flag the failure.
+            Logger.LogWarning(ex, "Failed to load {League} scoreboard", League);
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+            lastLoad = DateTime.UtcNow;
+        }
+    }
+
+    /// <param name="showDay">Include the weekday with the kickoff time (for tiles outside a day group).</param>
+    private RenderFragment GameTile(ScoreboardGame game, bool showDay = false) => GameLinkBase is null
+        ? GameTileBody(game, showDay)
+        : @<a class="game-link" href="@($"{GameLinkBase}/{game.Id}")" title="Box score and play-by-play">@GameTileBody(game, showDay)</a>;
+
+    private RenderFragment GameTileBody(ScoreboardGame game, bool showDay) => @<article class="game @(game.State == GameState.Live ? "is-live" : "")">
+        <div class="teams">
+            @TeamRow(game.Away, game)
+            @TeamRow(game.Home, game)
+        </div>
+        <div class="status">
+            @switch (game.State)
+            {
+                case GameState.Final:
+                    <span class="final">@game.StatusDetail</span>
+                    @if (showDay)
+                    {
+                        <span class="tv">@game.Start.ToString("ddd, MMM d")</span>
+                    }
+                    break;
+                case GameState.Live:
+                    <span class="live">@game.StatusDetail</span>
+                    break;
+                case GameState.Postponed:
+                    <span class="final">@game.StatusDetail</span>
+                    break;
+                default:
+                    <span class="time">@(showDay ? game.Start.ToString("ddd ") : "")@(game.TimeTbd ? "Time TBD" : game.Start.ToString("h:mm tt"))</span>
+                    @if (game.Broadcast is string tv)
+                    {
+                        <span class="tv">@tv</span>
+                    }
+                    break;
+            }
+        </div>
+        @if (game.Venue is not null || game.Note is not null)
+        {
+            <div class="meta">
+                @if (game.Note is string note)
+                {
+                    <span class="note-tag">@note</span>
+                }
+                @if (game.Venue is string venue)
+                {
+                    <span>@venue@(game.Location is string where ? $" · {where}" : "")</span>
+                }
+            </div>
+        }
+    </article>;
+
+    private RenderFragment TeamRow(ScoreboardTeam team, ScoreboardGame game) => @<div class="team @TeamClass(team, game)">
+        @if (team.LogoUrl is string logo)
+        {
+            <img src="@logo" alt="" width="28" height="28" loading="lazy" />
+        }
+        <span class="name" title="@team.Name">@team.ShortName</span>
+        @if (team.Record is string record)
+        {
+            <span class="record">@record</span>
+        }
+        @if (team.Score is int score)
+        {
+            <span class="score">@score</span>
+        }
+    </div>;
+
+    private string TeamClass(ScoreboardTeam team, ScoreboardGame game)
+    {
+        var classes = new List<string>();
+        if (PinnedTeams.Contains(team.Abbreviation, StringComparer.OrdinalIgnoreCase)) classes.Add("followed");
+        if (game.State == GameState.Final) classes.Add(team.IsWinner ? "winner" : "loser");
+        return string.Join(' ', classes);
+    }
+
+    private static string WeekDates(WeekRef week) =>
+        week.Start == default ? ""
+        : week.Start.Month == week.End.Month ? $"{week.Start:MMM d}–{week.End.Day}"
+        : $"{week.Start:MMM d} – {week.End:MMM d}";
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}

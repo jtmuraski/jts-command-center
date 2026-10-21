@@ -1,4 +1,6 @@
-namespace JtsCommandCenter.Web.Services.Weather;
+using JtsCommandCenter.Core.Weather;
+
+namespace JtsCommandCenter.Infrastructure.Weather;
 
 /// <summary>
 /// Maps WMO weather interpretation codes (used by Open-Meteo) to our icon set and a short description.

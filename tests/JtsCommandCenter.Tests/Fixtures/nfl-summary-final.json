@@ -1,0 +1,120 @@
+{
+  "header": {
+    "id": "900",
+    "week": 5,
+    "season": { "year": 2026, "type": 2 },
+    "competitions": [ {
+      "date": "2026-10-11T17:00Z",
+      "timeValid": true,
+      "status": { "type": { "state": "post", "completed": true, "shortDetail": "Final/OT" } },
+      "broadcasts": [ { "media": { "shortName": "Fox" } } ],
+      "competitors": [
+        {
+          "homeAway": "home", "score": "20", "winner": false, "possession": false,
+          "linescores": [ { "displayValue": "0" }, { "displayValue": "7" }, { "displayValue": "6" }, { "displayValue": "7" }, { "displayValue": "0" } ],
+          "record": [ { "type": "total", "displayValue": "1-4" } ],
+          "team": { "id": "18", "abbreviation": "NO", "displayName": "New Orleans Saints", "name": "Saints",
+                    "logos": [ { "href": "https://a.espncdn.com/i/teamlogos/nfl/500/no.png", "rel": [ "full", "default" ] },
+                               { "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/no.png", "rel": [ "full", "dark" ] } ] }
+        },
+        {
+          "homeAway": "away", "score": "23", "winner": true, "possession": false,
+          "linescores": [ { "displayValue": "3" }, { "displayValue": "3" }, { "displayValue": "7" }, { "displayValue": "7" }, { "displayValue": "3" } ],
+          "record": [ { "type": "total", "displayValue": "5-0" } ],
+          "team": { "id": "16", "abbreviation": "MIN", "displayName": "Minnesota Vikings", "name": "Vikings",
+                    "logos": [ { "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/min.png", "rel": [ "full", "dark" ] } ] }
+        }
+      ]
+    } ]
+  },
+  "gameInfo": {
+    "venue": { "fullName": "Caesars Superdome", "address": { "city": "New Orleans", "state": "LA" } },
+    "attendance": 70006,
+    "officials": [ { "displayName": "John Hussey", "position": { "displayName": "Referee" } } ]
+  },
+  "boxscore": {
+    "teams": [
+      { "homeAway": "away", "team": { "abbreviation": "MIN" }, "statistics": [
+        { "name": "firstDowns", "label": "1st Downs", "displayValue": "18" },
+        { "name": "thirdDownEff", "label": "3rd down efficiency", "displayValue": "9-18" },
+        { "name": "totalPenaltiesYards", "label": "Penalties", "displayValue": "4-30" },
+        { "name": "interceptions", "label": "Interceptions thrown", "displayValue": "0" },
+        { "name": "interceptions", "label": "Interceptions thrown", "displayValue": "0" },
+        { "name": "possessionTime", "label": "Possession", "displayValue": "39:37" }
+      ] },
+      { "homeAway": "home", "team": { "abbreviation": "NO" }, "statistics": [
+        { "name": "firstDowns", "label": "1st Downs", "displayValue": "12" },
+        { "name": "thirdDownEff", "label": "3rd down efficiency", "displayValue": "3-12" },
+        { "name": "totalPenaltiesYards", "label": "Penalties", "displayValue": "6-25" },
+        { "name": "interceptions", "label": "Interceptions thrown", "displayValue": "2" },
+        { "name": "possessionTime", "label": "Possession", "displayValue": "20:23" }
+      ] }
+    ],
+    "players": [
+      { "team": { "abbreviation": "MIN" }, "statistics": [
+        { "name": "receiving", "text": "Minnesota Receiving", "labels": [ "REC", "YDS" ], "totals": [ "24", "229" ],
+          "athletes": [ { "athlete": { "displayName": "Justin Jefferson", "jersey": "18" }, "stats": [ "6", "79" ] } ] },
+        { "name": "passing", "text": "Minnesota Passing", "labels": [ "C/ATT", "YDS" ], "totals": [ "24/30", "211" ],
+          "athletes": [ { "athlete": { "displayName": "Kyler Murray", "jersey": "1" }, "stats": [ "24/30", "229" ] } ] },
+        { "name": "fumbles", "text": "Minnesota Fumbles", "labels": [ "FUM" ], "totals": [ "0" ], "athletes": [] }
+      ] }
+    ]
+  },
+  "scoringPlays": [
+    { "type": { "text": "Field Goal Good", "abbreviation": "FG" }, "text": "Will Reichard 40 Yd Field Goal",
+      "awayScore": 3, "homeScore": 0, "period": { "number": 1 }, "clock": { "displayValue": "9:04" },
+      "team": { "abbreviation": "MIN", "logos": [ { "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/min.png", "rel": [ "full", "dark" ] } ] } }
+  ],
+  "drives": {
+    "previous": [
+      {
+        "id": "d1", "description": "3 plays, 51 yards, 5:56", "displayResult": "Field Goal", "isScore": true, "yards": 51,
+        "team": { "abbreviation": "MIN" },
+        "start": { "period": { "number": 1 }, "clock": { "displayValue": "15:00" }, "text": "MIN 28" },
+        "end": { "period": { "number": 1 }, "clock": { "displayValue": "9:04" }, "text": "NO 21" },
+        "plays": [
+          { "id": "p1", "type": { "text": "Kickoff" }, "text": "Kickoff to MIN 28.", "awayScore": 0, "homeScore": 0,
+            "period": { "number": 1 }, "clock": { "displayValue": "15:00" }, "statYardage": 27, "start": { "down": 0 } },
+          { "id": "p2", "type": { "text": "Rush" }, "text": "A.Jones left tackle for 6 yards.", "awayScore": 0, "homeScore": 0,
+            "period": { "number": 1 }, "clock": { "displayValue": "14:55" }, "statYardage": 6,
+            "start": { "down": 1, "downDistanceText": "1st & 10 at MIN 28" } },
+          { "id": "p2t", "type": { "text": "Timeout" }, "text": "Timeout #1 by MIN at 14:50.", "awayScore": 0, "homeScore": 0,
+            "period": { "number": 1 }, "clock": { "displayValue": "14:50" }, "statYardage": 0,
+            "start": { "down": 2, "downDistanceText": "2nd & 4 at MIN 34" } },
+          { "id": "p3", "type": { "text": "Field Goal Good" }, "text": "Will Reichard 40 Yd Field Goal", "awayScore": 3, "homeScore": 0,
+            "scoringPlay": true, "period": { "number": 1 }, "clock": { "displayValue": "9:04" }, "statYardage": 0,
+            "start": { "down": 4, "downDistanceText": "4th & 3 at NO 22" } }
+        ]
+      },
+      {
+        "id": "d2", "description": "1 play, 0 yards, 0:05", "displayResult": "Interception", "isScore": false, "yards": 0,
+        "team": { "abbreviation": "NO" },
+        "start": { "period": { "number": 2 }, "clock": { "displayValue": "2:00" }, "text": "NO 25" },
+        "plays": [
+          { "id": "p4", "type": { "text": "Pass Interception Return" }, "text": "Intercepted by B.Murphy.", "awayScore": 3, "homeScore": 0,
+            "isTurnover": true, "period": { "number": 2 }, "clock": { "displayValue": "2:00" }, "statYardage": 27,
+            "start": { "down": 1, "downDistanceText": "1st & 10 at NO 25" } }
+        ]
+      }
+    ]
+  },
+  "winprobability": [
+    { "homeWinPercentage": 0.445, "playId": "d1" },
+    { "homeWinPercentage": 0.42, "playId": "p1" },
+    { "homeWinPercentage": 0.31, "playId": "p3" },
+    { "homeWinPercentage": 1.4, "playId": "p4" }
+  ],
+  "leaders": [
+    { "team": { "abbreviation": "MIN" }, "leaders": [
+      { "name": "passingYards", "displayName": "Passing Yards", "leaders": [
+        { "displayValue": "24/30, 229 YDS, 1 TD", "athlete": { "displayName": "Kyler Murray", "position": { "abbreviation": "QB" } } } ] },
+      { "name": "sacks", "displayName": "Sacks", "leaders": [] }
+    ] }
+  ],
+  "injuries": [
+    { "team": { "abbreviation": "MIN" }, "injuries": [
+      { "status": "Questionable", "athlete": { "displayName": "T.J. Hockenson", "position": { "abbreviation": "TE" } }, "details": { "type": "Concussion" } } ] },
+    { "team": { "abbreviation": "NO" }, "injuries": [] }
+  ],
+  "predictor": { "homeTeam": { "gameProjection": "44.5" }, "awayTeam": { "gameProjection": "55.5" } }
+}

@@ -1,5 +1,10 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/JtsCommandCenter.Core/JtsCommandCenter.Core.csproj" />
+    <Project Path="src/JtsCommandCenter.Infrastructure/JtsCommandCenter.Infrastructure.csproj" />
     <Project Path="src/JtsCommandCenter.Web/JtsCommandCenter.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/JtsCommandCenter.Tests/JtsCommandCenter.Tests.csproj" />
   </Folder>
 </Solution>

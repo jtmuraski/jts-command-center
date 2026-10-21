@@ -1,58 +1,282 @@
-<DashboardCard Title="Sports">
-    <HeaderContent>Sample scores</HeaderContent>
-    <ChildContent>
-        @foreach (var league in leagues)
-        {
-            <section class="league">
-                <h3 class="group">@league.Sport <span>@league.Name</span></h3>
-                <ul class="games">
-                    @foreach (var game in league.Games)
-                    {
-                        <li>
-                            <div class="teams">
-                                <div class="team">
-                                    <span class="abbr">@game.Away</span>
-                                    <span class="score">@game.AwayScore</span>
-                                </div>
-                                <div class="team">
-                                    <span class="abbr">@game.Home</span>
-                                    <span class="score">@game.HomeScore</span>
-                                </div>
-                            </div>
-                            <span class="status @(game.Status == "Live" ? "live" : "")">@game.Status</span>
-                        </li>
-                    }
-                </ul>
-            </section>
-        }
+@using Microsoft.Extensions.Options
+@implements IDisposable
+@inject ISportsService SportsService
+@inject IOptions<SportsOptions> Options
+@inject ILogger<SportsCard> Logger
 
-        <a class="fantasy" href="" aria-disabled="true">
-            Fantasy tracker
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
-        </a>
+<DashboardCard Title="Sports">
+    <HeaderContent>
+        @if (report?.HasLiveGame == true)
+        {
+            <span class="live">Live</span>
+        }
+    </HeaderContent>
+    <ChildContent>
+        @if (report is not null)
+        {
+            @foreach (var team in report.Teams)
+            {
+                <section class="league">
+                    <div class="league-head">
+                        <h3 class="group">@team.Label <span>@team.ShortName</span></h3>
+                        @if (team.Recap is null && team.Record is not null)
+                        {
+                            <span class="standing">@team.Record@(team.Standing is null ? "" : $" · {team.Standing}")</span>
+                        }
+                    </div>
+
+                    @if (team.IsUnavailable)
+                    {
+                        <p class="note">Schedule unavailable right now.</p>
+                    }
+                    else if (team.Recap is { } recap)
+                    {
+                        <div class="recap">
+                            The @recap.Season season has been completed.
+                            @team.TeamName finished <strong>@recap.Record</strong>@PlaceText(recap).
+                        </div>
+                    }
+                    else if (team.Display == SportsDisplay.Series)
+                    {
+                        @if (team.CurrentSeries is { } series)
+                        {
+                            <div class="series-head">
+                                <span class="tag">@(series.IsComplete ? "Last series" : "Current series")</span>
+                                <span class="matchup">@Matchup(series.Opponent, series.IsHome)</span>
+                                <span class="series-meta">@DateRange(series) · @SeriesStatus(series)</span>
+                            </div>
+                            <ul class="games compact">
+                                @for (var i = 0; i < series.Games.Count; i++)
+                                {
+                                    var game = series.Games[i];
+                                    <li class="@RowClass(game)">
+                                        <span class="when">Game @(i + 1) · @game.Start.ToString("ddd, MMM d")</span>
+                                        @Outcome(game)
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="note">No games on the schedule.</p>
+                        }
+
+                        @if (team.NextSeries is { } nextSeries)
+                        {
+                            <div class="next-series">
+                                <span class="tag">Next series</span>
+                                <span class="matchup">@Matchup(nextSeries.Opponent, nextSeries.IsHome)</span>
+                                <span class="series-meta">@DateRange(nextSeries) · @nextSeries.Games.Count @(nextSeries.Games.Count == 1 ? "game" : "games")</span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <ul class="games">
+                            @GameRow(team.LastGame, "Last")
+                            @GameRow(team.NextGame, team.NextGame?.State == GameState.Live ? "Now" : "Next")
+                        </ul>
+                    }
+                </section>
+            }
+
+            <div class="footer">
+                @if (error is not null)
+                {
+                    <span class="stale">Couldn't refresh · showing last update</span>
+                }
+                else
+                {
+                    <span>As of @report.UpdatedAt.ToString("h:mm tt")</span>
+                }
+                <a href="https://www.espn.com/" target="_blank" rel="noopener">ESPN</a>
+            </div>
+        }
+        else if (error is not null)
+        {
+            <div class="state">
+                <p>Scores are unavailable right now.</p>
+                <button class="cc-btn cc-btn-ghost" type="button" @onclick="LoadAsync" disabled="@loading">
+                    @(loading ? "Retrying…" : "Try again")
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="state" aria-busy="true">
+                <p>Loading scores…</p>
+            </div>
+        }
     </ChildContent>
 </DashboardCard>
 
 @code {
-    // Placeholder data until a sports API is wired up.
-    private readonly League[] leagues =
-    [
-        new("Football", "NFL",
-        [
-            new("GB", "MIN", "17", "24", "Final"),
-            new("DET", "CHI", "10", "7", "Q3 4:12"),
-        ]),
-        new("Baseball", "MLB",
-        [
-            new("NYY", "MIN", "3", "5", "Live"),
-        ]),
-        new("Hockey", "NHL",
-        [
-            new("WPG", "MIN", "–", "–", "7:00 PM"),
-        ]),
-    ];
+    // While a game is live the card checks every minute; otherwise every RefreshMinutes.
+    private static readonly TimeSpan Tick = TimeSpan.FromMinutes(1);
 
-    private sealed record League(string Sport, string Name, Game[] Games);
+    private readonly CancellationTokenSource cts = new();
+    private SportsReport? report;
+    private string? error;
+    private bool loading;
+    private DateTime lastLoad;
 
-    private sealed record Game(string Away, string Home, string AwayScore, string HomeScore, string Status);
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // OnAfterRender only runs once the circuit is interactive (not during prerendering),
+        // so the refresh loop starts exactly once per open dashboard.
+        if (firstRender)
+        {
+            _ = RefreshLoopAsync();
+        }
+    }
+
+    private async Task RefreshLoopAsync()
+    {
+        using var timer = new PeriodicTimer(Tick);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cts.Token))
+            {
+                var due = report?.HasLiveGame == true
+                    || DateTime.UtcNow - lastLoad >= TimeSpan.FromMinutes(Options.Value.RefreshMinutes);
+                if (!due)
+                {
+                    continue;
+                }
+
+                await InvokeAsync(async () =>
+                {
+                    await LoadAsync();
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Component disposed (page closed or navigated away).
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        try
+        {
+            report = await SportsService.GetReportAsync(cts.Token);
+            error = null;
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // Disposed mid-request; nothing to update.
+        }
+        catch (Exception ex)
+        {
+            // Keep showing the last good report, if any, and flag it as stale.
+            Logger.LogWarning(ex, "Failed to load sports");
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+            lastLoad = DateTime.UtcNow;
+        }
+    }
+
+    private RenderFragment GameRow(Game? game, string tag) => @<li class="@(game is null ? "" : RowClass(game))">
+        <div class="info">
+            <span class="tag">@tag@(game?.Label is string label ? $" · {label}" : "")</span>
+            @if (game is null)
+            {
+                <span class="matchup none">@(tag == "Last" ? "No games played yet" : "Nothing scheduled")</span>
+            }
+            else
+            {
+                <span class="matchup">@Matchup(game.Opponent, game.IsHome)</span>
+                <span class="when">@game.Start.ToString("ddd, MMM d")</span>
+            }
+        </div>
+        @if (game is not null)
+        {
+            @Outcome(game)
+        }
+    </li>;
+
+    private RenderFragment Matchup(Opponent opponent, bool isHome) => @<text>
+        @if (opponent.LogoUrl is string logo)
+        {
+            <img src="@logo" alt="" width="22" height="22" loading="lazy" />
+        }
+        <span class="vs">@(isHome ? "vs" : "@")</span>
+        <span class="opp" title="@opponent.Name">@opponent.Name</span>
+    </text>;
+
+    private RenderFragment Outcome(Game game) => game.State switch
+    {
+        GameState.Final => @<span class="outcome">
+            <span class="result @ResultClass(game.Result)">@ResultLetter(game.Result)</span>
+            <span class="score">@game.Score–@game.OpponentScore</span>
+            @if (game.StatusDetail.Contains('/'))
+            {
+                <span class="detail">@game.StatusDetail.Split('/')[1]</span>
+            }
+        </span>,
+        GameState.Live => @<span class="outcome">
+            <span class="score">@game.Score–@game.OpponentScore</span>
+            <span class="detail live">@game.StatusDetail</span>
+        </span>,
+        GameState.Postponed => @<span class="outcome"><span class="detail">@game.StatusDetail</span></span>,
+        _ => @<span class="outcome"><span class="time">@(game.TimeTbd ? "TBD" : game.Start.ToString("h:mm tt"))</span></span>
+    };
+
+    private static string RowClass(Game game) => game.State == GameState.Live ? "is-live" : "";
+
+    private static string ResultLetter(GameResult? result) => result switch
+    {
+        GameResult.Win => "W",
+        GameResult.Loss => "L",
+        GameResult.Tie => "T",
+        _ => ""
+    };
+
+    private static string ResultClass(GameResult? result) => result switch
+    {
+        GameResult.Win => "win",
+        GameResult.Loss => "loss",
+        _ => ""
+    };
+
+    private static string DateRange(Series series) =>
+        series.FirstDay == series.LastDay ? series.FirstDay.ToString("MMM d")
+        : series.FirstDay.Month == series.LastDay.Month ? $"{series.FirstDay:MMM d}–{series.LastDay.Day}"
+        : $"{series.FirstDay:MMM d} – {series.LastDay:MMM d}";
+
+    private static string SeriesStatus(Series series)
+    {
+        var (w, l) = (series.Wins, series.Losses);
+        if (w + l == 0)
+        {
+            return $"{series.Games.Count} {(series.Games.Count == 1 ? "game" : "games")}";
+        }
+
+        if (series.IsComplete)
+        {
+            return w > l ? $"Won {w}–{l}" : w < l ? $"Lost {w}–{l}" : $"Split {w}–{l}";
+        }
+
+        return w > l ? $"Lead {w}–{l}" : w < l ? $"Trail {w}–{l}" : $"Tied {w}–{l}";
+    }
+
+    private static string PlaceText(SeasonRecap recap) => recap.Place switch
+    {
+        null => "",
+        string place => $", and {place} place in the {recap.Division ?? "division"}"
+    };
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
 }
