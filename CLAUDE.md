@@ -39,9 +39,9 @@ src/
       Layout/                    MainLayout (sidebar + topbar shell), NavMenu, ReconnectModal
       Pages/                     Routable pages (Home = dashboard; Sports/ = Sports Center pages; Projects/ = board and project page)
       SportsCenter/              Sports Center components (ScoreboardCard, NewsList, GameDetailView, WinProbabilityChart)
-      Projects/                  Project components (WorkItemCard, ProjectEditor/SubtaskEditor dialogs, WorkLog, LinkList, DateText)
+      Projects/                  Project components (WorkItemCard, ProjectEditor/SubtaskEditor dialogs, SubtaskPanel, WorkLog, LinkList, DateText)
       Dashboard/                 Dashboard cards (Weather, Todo, Projects, Sports, News)
-      Shared/                    Reusable components (DashboardCard, WeatherIcon, KanbanBoard, Modal, ReasonPrompt, Markdown/MarkdownText)
+      Shared/                    Reusable components (DashboardCard, WeatherIcon, KanbanBoard, Modal, SidePanel, ReasonPrompt, Markdown/MarkdownText)
     wwwroot/app.css              Global theme: color tokens + base styles
     wwwroot/lib/sortablejs/      Vendored SortableJS 1.15.6 (MIT), used by KanbanBoard for drag and drop
 tests/
@@ -89,6 +89,7 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
   - The drag script never leaves its DOM changes in place: on drop it puts the card back and raises `OnMove`, and the parent updates its data and re-renders. Keep each column list free of anything but card elements, because the script indexes its child nodes.
   - Give every card a non-drag way to move (the "···" actions sheet) for keyboard use and in case scripts fail. Mark buttons inside a card `data-no-drag`.
 - **Dialogs:** use `Shared/Modal` (render it only while open). It is full screen on phones. Forms leave `CloseOnBackdrop` off. `Shared/ReasonPrompt` asks for the optional On Hold / Blocked reason.
+- **Side panels:** `Shared/SidePanel` slides in from the right and is full screen on phones. It sits below `Modal` (z-index 90 vs 100), so render dialogs outside the panel and they appear on top. Escape and × close it; a click outside doesn't, so a half-written note isn't lost.
 - **Markdown:** render user text with `<Markdown Text="..." />`. `MarkdownText` (Markdig) escapes raw HTML and neutralizes links and images that aren't relative, http(s) or (for links) mailto. Never render user text as a `MarkupString` any other way.
 - New sections get a link in `Components/Layout/NavMenu.razor` (group under a `nav-section` heading). Groups that hold several pages (like Sports Center) use the collapsible `nav-group-toggle` pattern: open/closed is remembered in `localStorage`, and the group opens itself when you arrive at one of its pages from elsewhere.
 
@@ -138,7 +139,7 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 <!-- TODO: Fill in as decisions are made. -->
 - Authentication (likely Microsoft Entra ID, single user) — required before deploying publicly
 - Project management UI: Phases 1-3 are done.
-  - Done so far: the data layer; the `/projects` board (drag and drop, editor dialog, Work/Personal filter, archive); and the project page `/projects/{id}` (header, subtask board, Markdown description, links, work log).
-  - Clicking a subtask card currently opens `SubtaskEditor`. Phase 4 replaces that with a side panel that also shows the subtask's own `WorkLog` and `LinkList`, which already accept a `SubtaskId`.
-  - Still to build: the subtask side panel, image attachments in Markdown descriptions (Azure Blob Storage behind an `IAttachmentStore`, private container served through the app), and wiring the dashboard Projects and Due Today cards to `IProjectService`
+  - Done so far: the data layer; the `/projects` board (drag and drop, editor dialog, Work/Personal filter, archive); the project page `/projects/{id}` (header, subtask board, Markdown description, links, work log); and the subtask side panel.
+  - The side panel opens from a subtask card and lives in the query string (`?subtask={id}`, replacing the history entry), so it can be linked to. It has a status switch, dates, description, the subtask's links and its work log. It takes its data from the page's project load, which already includes subtask notes and links.
+  - Still to build: image attachments in Markdown descriptions (Azure Blob Storage behind an `IAttachmentStore`, private container served through the app), and wiring the dashboard Projects and Due Today cards to `IProjectService`
 - Azure deployment pipeline (GitHub Actions to App Service)

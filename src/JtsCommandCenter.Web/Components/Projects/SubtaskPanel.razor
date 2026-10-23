@@ -1,0 +1,104 @@
+@inject IProjectService Projects
+
+@{
+    var overdue = ProjectMath.IsOverdue(Subtask, Today);
+}
+@* Everything about one subtask: status, dates, description, links, and its own work log. The parent
+   page owns the data (its project load includes subtask notes and links) and reloads on OnChanged. *@
+<SidePanel Title="@Subtask.Title" Eyebrow="@ProjectTitle" OnClose="() => OnClose.InvokeAsync()">
+    <HeaderActions>
+        <button type="button" class="cc-btn cc-btn-ghost header-edit" @onclick="() => OnEdit.InvokeAsync(Subtask)">Edit</button>
+    </HeaderActions>
+    <ChildContent>
+        <section class="block" aria-label="Status">
+            <div class="status-switch" role="group" aria-label="Status">
+                @foreach (var status in Enum.GetValues<SubtaskStatus>())
+                {
+                    var current = status == Subtask.Status;
+                    <button type="button" class="status-@status.ToString().ToLowerInvariant() @(current ? "is-current" : "")"
+                            aria-pressed="@(current ? "true" : "false")" disabled="@current"
+                            @onclick="() => OnMove.InvokeAsync(status)">
+                        @ProjectMath.DisplayName(status)
+                    </button>
+                }
+            </div>
+
+            @if (Subtask.Status == SubtaskStatus.Blocked)
+            {
+                <p class="blocked-reason">
+                    <strong>Blocked:</strong> @(Subtask.BlockedReason ?? "no reason given")
+                </p>
+            }
+
+            <dl class="facts">
+                <div><dt>Priority</dt><dd class="priority-@Subtask.Priority.ToString().ToLowerInvariant()">@Subtask.Priority</dd></div>
+                @if (Subtask.StartDate is DateOnly start)
+                {
+                    <div><dt>Start</dt><dd>@DateText.Short(start, Today)</dd></div>
+                }
+                @if (Subtask.DueDate is DateOnly due)
+                {
+                    <div class="@(overdue ? "is-overdue" : "")"><dt>Due</dt><dd>@DateText.Short(due, Today)@(overdue ? " · overdue" : due == Today && Subtask.Status != SubtaskStatus.Done ? " · today" : "")</dd></div>
+                }
+                @if (Subtask.CompletedAt is DateTime completed)
+                {
+                    <div><dt>Completed</dt><dd>@DateText.Short(DateOnly.FromDateTime(Projects.ToLocalTime(completed)), Today)</dd></div>
+                }
+                <div><dt>Created</dt><dd>@DateText.Short(DateOnly.FromDateTime(Projects.ToLocalTime(Subtask.CreatedAt)), Today)</dd></div>
+            </dl>
+        </section>
+
+        <section class="block" aria-labelledby="@($"{idPrefix}-description")">
+            <h3 id="@($"{idPrefix}-description")">Description</h3>
+            @if (string.IsNullOrWhiteSpace(Subtask.Description))
+            {
+                <p class="cc-muted empty">
+                    No description yet.
+                    <button type="button" class="inline-link" @onclick="() => OnEdit.InvokeAsync(Subtask)">Add one</button>
+                </p>
+            }
+            else
+            {
+                <Markdown Text="@Subtask.Description" />
+            }
+        </section>
+
+        <section class="block" aria-labelledby="@($"{idPrefix}-links")">
+            <h3 id="@($"{idPrefix}-links")">Links</h3>
+            <LinkList ProjectId="Subtask.ProjectId" SubtaskId="Subtask.Id" Links="Links" OnChanged="() => OnChanged.InvokeAsync()" />
+        </section>
+
+        <section class="block" aria-labelledby="@($"{idPrefix}-log")">
+            <h3 id="@($"{idPrefix}-log")">Work log</h3>
+            <WorkLog ProjectId="Subtask.ProjectId" SubtaskId="Subtask.Id" Notes="Notes" OnChanged="() => OnChanged.InvokeAsync()" />
+        </section>
+
+        <div class="danger-zone">
+            <button type="button" class="cc-btn cc-btn-danger" @onclick="() => OnDelete.InvokeAsync(Subtask)">Delete subtask</button>
+        </div>
+    </ChildContent>
+</SidePanel>
+
+@code {
+    [Parameter, EditorRequired] public Subtask Subtask { get; set; } = default!;
+    [Parameter] public string? ProjectTitle { get; set; }
+    [Parameter, EditorRequired] public DateOnly Today { get; set; }
+
+    /// <summary>This subtask's notes, newest first.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<Note> Notes { get; set; } = [];
+
+    [Parameter, EditorRequired] public IReadOnlyList<Link> Links { get; set; } = [];
+
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<Subtask> OnEdit { get; set; }
+
+    /// <summary>A status button was pressed. The page moves the subtask (asking for a reason for Blocked).</summary>
+    [Parameter] public EventCallback<SubtaskStatus> OnMove { get; set; }
+
+    [Parameter] public EventCallback<Subtask> OnDelete { get; set; }
+
+    /// <summary>A note or link changed; the page should reload.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private readonly string idPrefix = $"subtask-panel-{Guid.NewGuid():N}";
+}

@@ -192,10 +192,21 @@ else
                     </button>
                 }
                 <p class="cc-sheet-label">Subtask</p>
-                <button type="button" class="cc-sheet-option" @onclick="() => { subtaskActionsFor = null; OpenSubtask(target); }">Edit details</button>
+                <button type="button" class="cc-sheet-option" @onclick="() => { subtaskActionsFor = null; OpenSubtask(target); }">Open details</button>
+                <button type="button" class="cc-sheet-option" @onclick="() => { subtaskActionsFor = null; EditSubtask(target); }">Edit</button>
                 <button type="button" class="cc-sheet-option is-danger" @onclick="() => { subtaskActionsFor = null; deleteSubtask = target; }">Delete</button>
             </div>
         </Modal>
+    }
+
+    @if (OpenSubtaskItem is { } open)
+    {
+        <SubtaskPanel @key="open.Id" Subtask="open" ProjectTitle="@project.Title" Today="today"
+                      Notes="project.Notes.Where(n => n.SubtaskId == open.Id).ToList()"
+                      Links="project.Links.Where(l => l.SubtaskId == open.Id).ToList()"
+                      OnClose="CloseSubtask" OnEdit="EditSubtask" OnChanged="LoadAsync"
+                      OnMove="status => RequestSubtaskMoveAsync(open.Id, status, int.MaxValue)"
+                      OnDelete="s => deleteSubtask = s" />
     }
 
     @if (subtaskEditorOpen)
@@ -237,6 +248,9 @@ else
 
     [Parameter] public int Id { get; set; }
 
+    /// <summary>The subtask whose side panel is open, e.g. /projects/12?subtask=40, so it can be linked to.</summary>
+    [SupplyParameterFromQuery(Name = "subtask")] public int? SubtaskQuery { get; set; }
+
     private Project? project;
     private bool notFound;
     private bool loadFailed;
@@ -254,6 +268,8 @@ else
     private SubtaskStatus newSubtaskStatus;
     private (int Id, int Index)? pendingBlock;
     private Subtask? deleteSubtask;
+
+    private Subtask? OpenSubtaskItem => SubtaskQuery is int id ? project?.Subtasks.FirstOrDefault(s => s.Id == id) : null;
 
     private IReadOnlyList<Link> ProjectLinks => project!.Links.Where(l => l.SubtaskId is null).ToList();
 
@@ -352,7 +368,14 @@ else
         subtaskEditorOpen = true;
     }
 
-    private void OpenSubtask(Subtask subtask)
+    // The panel lives in the query string; replacing the history entry keeps Back going to the previous page.
+    private void OpenSubtask(Subtask subtask) =>
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("subtask", subtask.Id), replace: true);
+
+    private void CloseSubtask() =>
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("subtask", (int?)null), replace: true);
+
+    private void EditSubtask(Subtask subtask)
     {
         editingSubtask = subtask;
         subtaskEditorOpen = true;
@@ -437,6 +460,11 @@ else
     private async Task DeleteSubtaskAsync(Subtask subtask)
     {
         deleteSubtask = null;
+        if (SubtaskQuery == subtask.Id)
+        {
+            CloseSubtask();
+        }
+
         try
         {
             await Projects.DeleteSubtaskAsync(subtask.Id);

@@ -1,0 +1,48 @@
+@* A panel that slides in from the right over a dimmed page (full screen on phones). Render it only while
+   it's open. A click outside doesn't close it, so a half-written note isn't lost; Escape and × do. *@
+<div class="panel-layer" @onkeydown="OnKeyDown">
+    <div class="panel-backdrop"></div>
+    <aside class="side-panel" role="dialog" aria-modal="true" aria-labelledby="@titleId" tabindex="-1" @ref="panel">
+        <header class="panel-header">
+            <div class="panel-title">
+                @if (Eyebrow is not null)
+                {
+                    <span class="eyebrow">@Eyebrow</span>
+                }
+                <h2 id="@titleId">@Title</h2>
+            </div>
+            @HeaderActions
+            <button type="button" class="panel-close" aria-label="Close" title="Close (Esc)" @onclick="() => OnClose.InvokeAsync()">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+        </header>
+        <div class="panel-body">
+            @ChildContent
+        </div>
+    </aside>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    /// <summary>Small text above the title, e.g. the parent project's name.</summary>
+    [Parameter] public string? Eyebrow { get; set; }
+
+    [Parameter] public RenderFragment? HeaderActions { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private readonly string titleId = $"panel-{Guid.NewGuid():N}";
+    private ElementReference panel;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await panel.FocusAsync();
+        }
+    }
+
+    // Escape inside an open dialog (e.g. an editor over the panel) is handled there, not here.
+    private Task OnKeyDown(KeyboardEventArgs e) => e.Key == "Escape" ? OnClose.InvokeAsync() : Task.CompletedTask;
+}

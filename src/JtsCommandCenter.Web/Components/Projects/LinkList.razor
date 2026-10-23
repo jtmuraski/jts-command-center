@@ -12,7 +12,10 @@
                     <a href="@link.Url" target="_blank" rel="noopener noreferrer" title="@link.Url">
                         <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
                         <span class="label">@link.Label</span>
-                        <span class="host">@HostOf(link.Url)</span>
+                        @if (HostOf(link.Url) is { } host && host != link.Label)
+                        {
+                            <span class="host">@host</span>
+                        }
                     </a>
                     <button type="button" class="remove" aria-label="Remove link @link.Label" title="Remove" @onclick="() => DeleteAsync(link)">
                         <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
