@@ -1,28 +1,98 @@
+@implements IDisposable
+@inject INewsService NewsService
+@inject IOptions<NewsOptions> Options
+@inject ILogger<NewsCard> Logger
+
 <DashboardCard Title="News">
     <HeaderContent>Top stories</HeaderContent>
     <ChildContent>
-        <ul class="stories">
-            @foreach (var story in stories)
-            {
-                <li>
-                    <span class="topic">@story.Topic</span>
-                    <a class="headline" href="" aria-disabled="true">@story.Headline</a>
-                    <span class="source">@story.Source · @story.Age</span>
-                </li>
-            }
-        </ul>
+        @if (highlights is null)
+        {
+            <p class="state cc-muted">@(failed ? "News is unavailable right now." : "Loading stories…")</p>
+        }
+        else if (highlights.Count == 0)
+        {
+            <p class="state cc-muted">No stories right now.</p>
+        }
+        else
+        {
+            <ul class="stories">
+                @foreach (var story in highlights)
+                {
+                    <li>
+                        <a class="topic" href="news?category=@story.CategoryKey">@story.CategoryName</a>
+                        <a class="headline" href="@story.Article.Url" target="_blank" rel="noopener">@story.Article.Title</a>
+                        <span class="source">@story.Article.Source · @RelativeTime.Ago(story.Article.Published, DateTimeOffset.UtcNow)</span>
+                    </li>
+                }
+            </ul>
+        }
+
+        <a class="cc-btn cc-btn-ghost view-all" href="news">All news</a>
     </ChildContent>
 </DashboardCard>
 
 @code {
-    // Placeholder data until a news feed is wired up.
-    private readonly Story[] stories =
-    [
-        new("AI & Tech", "Placeholder headline about the latest developments in AI tooling", "Tech Source", "23 min ago"),
-        new("Space", "Placeholder headline about an upcoming launch window", "Space Source", "1 hr ago"),
-        new("Economy", "Placeholder headline about markets and interest rates", "Business Source", "2 hr ago"),
-        new("Local", "Placeholder headline about Minnesota news", "Local Source", "3 hr ago"),
-    ];
+    /// <summary>Stories per category on the card; the News page has the rest.</summary>
+    private const int PerCategory = 1;
 
-    private sealed record Story(string Topic, string Headline, string Source, string Age);
+    private readonly CancellationTokenSource cts = new();
+    private IReadOnlyList<NewsHighlight>? highlights;
+    private bool failed;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // Only runs once the circuit is interactive, so the refresh loop starts once per open dashboard.
+        if (firstRender)
+        {
+            _ = RefreshLoopAsync();
+        }
+    }
+
+    private async Task RefreshLoopAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(Options.Value.RefreshMinutes));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cts.Token))
+            {
+                await InvokeAsync(async () =>
+                {
+                    await LoadAsync();
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Component disposed (page closed or navigated away).
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            highlights = NewsMath.Highlights(await NewsService.GetNewsAsync(cts.Token), PerCategory);
+            failed = false;
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // Disposed mid-request; nothing to update.
+        }
+        catch (Exception ex)
+        {
+            // Keep showing the last good stories, if any.
+            Logger.LogWarning(ex, "Failed to load news for the dashboard");
+            failed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
 }

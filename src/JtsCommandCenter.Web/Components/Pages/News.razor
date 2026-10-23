@@ -1,0 +1,151 @@
+@page "/news"
+@implements IDisposable
+@inject INewsService NewsService
+@inject IOptions<NewsOptions> Options
+@inject ILogger<News> Logger
+
+<PageTitle>@(Selected?.Name is string name ? $"{name} news" : "News") · Command Center</PageTitle>
+
+<header class="news-header">
+    <div>
+        <h1>News</h1>
+        <p class="cc-muted">
+            @if (report is not null)
+            {
+                <text>Updated @RelativeTime.Ago(report.FetchedAt, DateTimeOffset.UtcNow)</text>
+            }
+            else
+            {
+                <text>Headlines by topic</text>
+            }
+        </p>
+    </div>
+</header>
+
+<nav class="topics" aria-label="News topics">
+    <a class="topic @(Selected is null ? "is-active" : "")" href="news" aria-current="@(Selected is null ? "page" : null)">All</a>
+    @foreach (var category in Options.Value.Categories)
+    {
+        var active = Selected?.Key == category.Key;
+        <a class="topic @(active ? "is-active" : "")" href="news?category=@category.Key" aria-current="@(active ? "page" : null)">@category.Name</a>
+    }
+</nav>
+
+@if (report is null)
+{
+    <div class="state">
+        @if (error is null)
+        {
+            <p class="cc-muted">Loading stories…</p>
+        }
+        else
+        {
+            <p class="cc-muted">News is unavailable right now.</p>
+            <button class="cc-btn cc-btn-ghost" type="button" @onclick="LoadAsync">Try again</button>
+        }
+    </div>
+}
+else if (Selected is NewsCategory selected)
+{
+    <div class="single">
+        <DashboardCard Title="@selected.Name">
+            <HeaderContent>@selected.Articles.Count stories</HeaderContent>
+            <ChildContent>
+                <NewsList Articles="selected.Articles" />
+                @if (selected.FailedSources.Count > 0)
+                {
+                    <p class="sources-note">Couldn't reach @string.Join(", ", selected.FailedSources) this time.</p>
+                }
+            </ChildContent>
+        </DashboardCard>
+    </div>
+}
+else
+{
+    <div class="news-grid">
+        @foreach (var category in report.Categories)
+        {
+            <DashboardCard Title="@category.Name">
+                <HeaderContent><a class="more" href="news?category=@category.Key">More</a></HeaderContent>
+                <ChildContent>
+                    <NewsList Articles="category.Articles.Take(OverviewCount).ToList()" ShowSummaries="false" />
+                    @if (category.FailedSources.Count > 0)
+                    {
+                        <p class="sources-note">Couldn't reach @string.Join(", ", category.FailedSources) this time.</p>
+                    }
+                </ChildContent>
+            </DashboardCard>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>Headlines per topic on the "All" view.</summary>
+    private const int OverviewCount = 6;
+
+    /// <summary>Topic to show, e.g. ?category=minnesota; anything else shows every topic.</summary>
+    [SupplyParameterFromQuery] public string? Category { get; set; }
+
+    private readonly CancellationTokenSource cts = new();
+    private NewsReport? report;
+    private string? error;
+
+    private NewsCategory? Selected =>
+        report?.Categories.FirstOrDefault(c => string.Equals(c.Key, Category, StringComparison.OrdinalIgnoreCase));
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // Only runs once the circuit is interactive, so the refresh loop starts once per open page.
+        if (firstRender)
+        {
+            _ = RefreshLoopAsync();
+        }
+    }
+
+    private async Task RefreshLoopAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(Options.Value.RefreshMinutes));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cts.Token))
+            {
+                await InvokeAsync(async () =>
+                {
+                    await LoadAsync();
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Navigated away.
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            report = await NewsService.GetNewsAsync(cts.Token);
+            error = null;
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // Navigated away mid-request.
+        }
+        catch (Exception ex)
+        {
+            // Keep showing the last good report, if any.
+            Logger.LogWarning(ex, "Failed to load news");
+            error = ex.Message;
+        }
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}

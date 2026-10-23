@@ -1,3 +1,5 @@
+using JtsCommandCenter.Core.News;
+
 namespace JtsCommandCenter.Core.Sports;
 
 /// <summary>Settings bound from the "SportsCenter" section of appsettings.json (the Sports Center pages).</summary>
@@ -63,10 +65,4 @@ public sealed class FocusTeamOptions
     public List<NewsFeedOptions> Feeds { get; set; } = [];
 
     public int ArticleCount { get; set; } = 12;
-}
-
-public sealed class NewsFeedOptions
-{
-    public string Name { get; set; } = string.Empty;
-    public string Url { get; set; } = string.Empty;
 }

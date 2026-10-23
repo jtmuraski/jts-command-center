@@ -11,6 +11,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddWeather(builder.Configuration);
 builder.Services.AddSports(builder.Configuration);
+builder.Services.AddNews(builder.Configuration);
 builder.Services.AddProjects(builder.Configuration);
 builder.Services.AddScoped<JtsCommandCenter.Web.Components.Projects.ProjectChangeNotifier>();
 
