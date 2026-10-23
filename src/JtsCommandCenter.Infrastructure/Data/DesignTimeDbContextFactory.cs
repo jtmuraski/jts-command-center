@@ -10,7 +10,7 @@ namespace JtsCommandCenter.Infrastructure.Data;
 internal sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<CommandCenterDbContext>
 {
     public const string LocalConnectionString =
-        "Server=(localdb)\\MSSQLLocalDB;Database=JtsCommandCenter;Trusted_Connection=True;TrustServerCertificate=True";
+        "Server=.\\SQLEXPRESS;Database=JtsCommandCenter;Trusted_Connection=True;TrustServerCertificate=True";
 
     public CommandCenterDbContext CreateDbContext(string[] args) =>
         new(new DbContextOptionsBuilder<CommandCenterDbContext>().UseSqlServer(LocalConnectionString).Options);

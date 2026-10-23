@@ -1,7 +1,6 @@
-namespace JtsCommandCenter.Core.Sports;
+using JtsCommandCenter.Core.News;
 
-/// <param name="Summary">Plain-text teaser, when the source provides one.</param>
-public sealed record NewsArticle(string Title, string Url, string Source, DateTimeOffset Published, string? Summary);
+namespace JtsCommandCenter.Core.Sports;
 
 /// <param name="TeamName">Focus team's name, or null when the league has no focus team configured.</param>
 /// <param name="FailedSources">Sources that couldn't be fetched this time (the rest still show).</param>

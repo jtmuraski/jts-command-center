@@ -20,12 +20,17 @@
         }
 
 .topic {
+    align-self: flex-start;
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--cc-accent);
 }
+
+    .topic:hover {
+        color: var(--cc-text-strong);
+    }
 
 .headline {
     color: var(--cc-text-strong);
@@ -39,4 +44,15 @@
 .source {
     font-size: 0.8rem;
     color: var(--cc-text-faint);
+}
+
+.state {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+}
+
+.view-all {
+    margin-top: 1rem;
+    min-height: 2.5rem;
+    justify-content: center;
 }

@@ -1,0 +1,95 @@
+.news-header {
+    margin-bottom: 1rem;
+}
+
+    .news-header h1 {
+        margin: 0 0 0.25rem;
+    }
+
+    .news-header p {
+        margin: 0;
+    }
+
+/* Topic tabs: one scrollable row on phones and tablets, so they never wrap into a wall of pills. */
+.topics {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0 0 1.25rem;
+    padding-bottom: 0.25rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.topic {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0 1rem;
+    border: 1px solid var(--cc-border);
+    border-radius: 999px;
+    color: var(--cc-text-muted);
+    background: var(--cc-surface);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+    .topic:hover {
+        color: var(--cc-text-strong);
+        border-color: var(--cc-text-faint);
+    }
+
+    .topic.is-active {
+        color: var(--cc-text-strong);
+        background: var(--cc-primary-soft);
+        border-color: var(--cc-primary-hover);
+    }
+
+/* "All": one card per topic. */
+.news-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+@media (min-width: 720px) {
+    .news-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.25rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .news-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* One topic: a single readable column. */
+.single {
+    max-width: 52rem;
+}
+
+.more {
+    color: var(--cc-accent);
+    font-size: 0.85rem;
+}
+
+    .more:hover {
+        color: var(--cc-text-strong);
+    }
+
+.sources-note {
+    margin: 0.75rem 0 0;
+    font-size: 0.75rem;
+    color: var(--cc-warning);
+}
+
+.state {
+    padding: 2rem 0;
+    text-align: center;
+}
+
+    .state p {
+        margin: 0 0 0.75rem;
+    }

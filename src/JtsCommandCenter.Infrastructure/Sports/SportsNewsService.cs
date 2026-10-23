@@ -1,13 +1,12 @@
 using System.Globalization;
-using System.Net;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Xml;
-using System.Xml.Linq;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using JtsCommandCenter.Core.News;
 using JtsCommandCenter.Core.Sports;
+using static JtsCommandCenter.Infrastructure.News.FeedReader;
 using static JtsCommandCenter.Infrastructure.Sports.EspnJson;
 
 namespace JtsCommandCenter.Infrastructure.Sports;
@@ -17,16 +16,13 @@ namespace JtsCommandCenter.Infrastructure.Sports;
 /// its news endpoint is ignored by the API, so team news is ESPN articles tagged with the team plus the
 /// team's own feeds plus league-feed headlines that mention the team.
 /// </summary>
-public sealed partial class SportsNewsService(
+public sealed class SportsNewsService(
     HttpClient http,
     IMemoryCache cache,
     IOptions<SportsCenterOptions> options,
     ILogger<SportsNewsService> logger) : ISportsNewsService
 {
     private const string EspnSource = "ESPN";
-    private const int SummaryLength = 220;
-
-    private static readonly XNamespace Atom = "http://www.w3.org/2005/Atom";
 
     private readonly SportsCenterOptions settings = options.Value;
 
@@ -81,15 +77,6 @@ public sealed partial class SportsNewsService(
         return news;
     }
 
-    /// <summary>Drops excluded and duplicate headlines (same title from two outlets), newest first.</summary>
-    private static List<NewsArticle> Merge(IEnumerable<NewsArticle> articles, List<string> exclude, int count) =>
-        articles
-            .Where(a => !MentionsAny(a.Title, exclude) && !MentionsAny(a.Summary, exclude))
-            .DistinctBy(a => NormalizeTitle(a.Title))
-            .OrderByDescending(a => a.Published)
-            .Take(count)
-            .ToList();
-
     /// <summary>
     /// ESPN tags league-wide roundups (power rankings, picks) with many teams, so a team tag only counts when
     /// the story is about a couple of teams at most or names the team in its headline or teaser.
@@ -97,11 +84,6 @@ public sealed partial class SportsNewsService(
     private static bool IsAboutTeam(EspnArticle article, FocusTeamOptions focus) =>
         article.TeamIds.Contains(focus.EspnTeamId)
         && (article.TeamIds.Count <= 2 || MentionsAny(article.Article.Title, focus.Keywords) || MentionsAny(article.Article.Summary, focus.Keywords));
-
-    private static bool MentionsAny(string? text, List<string> words) =>
-        text is not null && words.Any(w => text.Contains(w, StringComparison.OrdinalIgnoreCase));
-
-    private static string NormalizeTitle(string title) => NonWordRegex().Replace(title.ToLowerInvariant(), "");
 
     private sealed record EspnArticle(NewsArticle Article, HashSet<string> TeamIds);
 
@@ -150,14 +132,7 @@ public sealed partial class SportsNewsService(
     {
         try
         {
-            await using var stream = await http.GetStreamAsync(feed.Url, cancellationToken);
-            using var reader = XmlReader.Create(stream, new XmlReaderSettings { DtdProcessing = DtdProcessing.Ignore, Async = true });
-            var doc = await XDocument.LoadAsync(reader, LoadOptions.None, cancellationToken);
-
-            var items = doc.Descendants("item").Select(i => ParseRssItem(i, feed.Name))
-                .Concat(doc.Descendants(Atom + "entry").Select(e => ParseAtomEntry(e, feed.Name)));
-
-            return items.OfType<NewsArticle>().ToList();
+            return await ReadAsync(http, feed, cancellationToken);
         }
         catch (Exception ex) when (ex is HttpRequestException or XmlException or TaskCanceledException && !cancellationToken.IsCancellationRequested)
         {
@@ -166,86 +141,4 @@ public sealed partial class SportsNewsService(
             return [];
         }
     }
-
-    private static NewsArticle? ParseRssItem(XElement item, string source)
-    {
-        var title = Clean(item.Element("title")?.Value);
-        var link = item.Element("link")?.Value.Trim();
-        if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(link) || ParseDate(item.Element("pubDate")?.Value) is not DateTimeOffset published)
-        {
-            return null;
-        }
-
-        return new NewsArticle(title, link, source, published, Trim(item.Element("description")?.Value));
-    }
-
-    private static NewsArticle? ParseAtomEntry(XElement entry, string source)
-    {
-        var title = Clean(entry.Element(Atom + "title")?.Value);
-        var link = entry.Elements(Atom + "link")
-            .FirstOrDefault(l => (string?)l.Attribute("rel") is null or "alternate")?.Attribute("href")?.Value;
-        var date = entry.Element(Atom + "published")?.Value ?? entry.Element(Atom + "updated")?.Value;
-        if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(link) || ParseDate(date) is not DateTimeOffset published)
-        {
-            return null;
-        }
-
-        var summary = entry.Element(Atom + "summary")?.Value ?? entry.Element(Atom + "content")?.Value;
-        return new NewsArticle(title, link, source, published, Trim(summary));
-    }
-
-    /// <summary>Parses RFC 822 (RSS) and ISO 8601 (Atom) dates, including RFC 822's "+0000" style offsets.</summary>
-    private static DateTimeOffset? ParseDate(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        value = value.Trim();
-        if (DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsed))
-        {
-            return parsed;
-        }
-
-        // "Wed, 21 Oct 2026 19:14:30 +0000" → "... +00:00", which .NET understands.
-        var withColon = Rfc822OffsetRegex().Replace(value, "$1:$2");
-        return DateTimeOffset.TryParse(withColon, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out parsed)
-            ? parsed
-            : null;
-    }
-
-    /// <summary>Strips HTML and collapses whitespace.</summary>
-    private static string Clean(string? html) =>
-        html is null ? "" : WhitespaceRegex().Replace(WebUtility.HtmlDecode(TagRegex().Replace(html, " ")), " ").Trim();
-
-    /// <summary>Cleans a teaser and shortens it to a sentence-ish length.</summary>
-    private static string? Trim(string? html)
-    {
-        var text = Clean(html);
-        if (text.Length == 0)
-        {
-            return null;
-        }
-
-        if (text.Length <= SummaryLength)
-        {
-            return text;
-        }
-
-        var cut = text.LastIndexOf(' ', SummaryLength);
-        return text[..(cut > 0 ? cut : SummaryLength)].TrimEnd(',', '.', ';', ':') + "…";
-    }
-
-    [GeneratedRegex(@"<[^>]+>")]
-    private static partial Regex TagRegex();
-
-    [GeneratedRegex(@"\s+")]
-    private static partial Regex WhitespaceRegex();
-
-    [GeneratedRegex(@"[^a-z0-9]+")]
-    private static partial Regex NonWordRegex();
-
-    [GeneratedRegex(@"([+-]\d{2})(\d{2})$")]
-    private static partial Regex Rfc822OffsetRegex();
 }

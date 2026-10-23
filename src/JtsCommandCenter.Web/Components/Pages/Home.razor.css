@@ -10,15 +10,6 @@
         margin: 0;
     }
 
-.sample-badge {
-    font-size: 0.75rem;
-    color: var(--cc-text-muted);
-    border: 1px dashed var(--cc-border);
-    border-radius: 999px;
-    padding: 0.2rem 0.65rem;
-    white-space: nowrap;
-}
-
 /* Mobile first: single column, ordered by what matters most at a glance. */
 .dashboard {
     display: grid;

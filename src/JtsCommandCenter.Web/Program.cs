@@ -11,6 +11,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddWeather(builder.Configuration);
 builder.Services.AddSports(builder.Configuration);
+builder.Services.AddNews(builder.Configuration);
 builder.Services.AddProjects(builder.Configuration);
 builder.Services.AddScoped<JtsCommandCenter.Web.Components.Projects.ProjectChangeNotifier>();
 
@@ -22,7 +23,7 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    // Keeps the LocalDB schema current. Deployed environments are migrated by the pipeline.
+    // Keeps the local development schema current. Deployed environments are migrated by the pipeline.
     await app.Services.MigrateDatabaseAsync();
 }
 

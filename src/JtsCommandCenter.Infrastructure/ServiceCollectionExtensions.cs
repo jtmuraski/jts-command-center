@@ -4,10 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using JtsCommandCenter.Core.News;
 using JtsCommandCenter.Core.Projects;
 using JtsCommandCenter.Core.Sports;
 using JtsCommandCenter.Core.Weather;
 using JtsCommandCenter.Infrastructure.Data;
+using JtsCommandCenter.Infrastructure.News;
 using JtsCommandCenter.Infrastructure.Projects;
 using JtsCommandCenter.Infrastructure.Sports;
 using JtsCommandCenter.Infrastructure.Weather;
@@ -22,6 +24,9 @@ public static class ServiceCollectionExtensions
 
     private const string EspnBaseAddress = "https://site.api.espn.com/";
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+
+    // Some feed hosts reject requests that carry no user agent.
+    private const string FeedUserAgent = "JtsCommandCenter/1.0 (+personal dashboard)";
 
     /// <summary>Weather from Open-Meteo, configured from the "Weather" section.</summary>
     public static IServiceCollection AddWeather(this IServiceCollection services, IConfiguration configuration)
@@ -67,15 +72,29 @@ public static class ServiceCollectionExtensions
             // ESPN relative URLs resolve against this; RSS feeds are fetched by absolute URL.
             client.BaseAddress = new Uri(EspnBaseAddress);
             client.Timeout = RequestTimeout;
-            // Some feed hosts reject requests that carry no user agent.
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("JtsCommandCenter/1.0 (+personal dashboard)");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(FeedUserAgent);
+        });
+
+        return services;
+    }
+
+    /// <summary>General news by category, merged from the RSS/Atom feeds in the "News" section.</summary>
+    public static IServiceCollection AddNews(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddMemoryCache();
+        services.TryAddSingleton(TimeProvider.System);
+        services.Configure<NewsOptions>(configuration.GetSection(NewsOptions.SectionName));
+        services.AddHttpClient<INewsService, NewsService>(client =>
+        {
+            client.Timeout = RequestTimeout;
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(FeedUserAgent);
         });
 
         return services;
     }
 
     /// <summary>
-    /// Projects, subtasks, and notes in SQL Server (LocalDB in development, Azure SQL in production),
+    /// Projects, subtasks, and notes in SQL Server (SQL Express in development, Azure SQL in production),
     /// using the "CommandCenter" connection string and the "Projects" section; image attachments in a
     /// local folder or Azure Blob Storage, per the "Attachments" section.
     /// </summary>

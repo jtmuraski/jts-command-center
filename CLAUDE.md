@@ -26,23 +26,25 @@ src/
     Weather/                     IWeatherService, WeatherReport, WeatherOptions, WeatherCondition
     Sports/                      ISportsService, IScoreboardService, ISportsNewsService, models, options, ScheduleMath
     Projects/                    IProjectService, IAttachmentService/IAttachmentStore, entities, inputs, ProjectMath, ImageFormats
+    News/                        INewsService, NewsReport, NewsOptions, NewsArticle/NewsFeedOptions (shared with Sports), NewsMath
   JtsCommandCenter.Infrastructure/  Implementations that call external services, plus DI registration
-    ServiceCollectionExtensions.cs  AddWeather / AddSports / AddProjects, MigrateDatabaseAsync
+    ServiceCollectionExtensions.cs  AddWeather / AddSports / AddNews / AddProjects, MigrateDatabaseAsync
     Data/                        CommandCenterDbContext (EF Core), design-time factory, Migrations/
     Weather/                     OpenMeteoWeatherService, WMO code mapping
     Sports/                      ESPN schedule/scoreboard services, RSS/Atom news service, EspnJson helpers
     Projects/                    ProjectService (EF Core), AttachmentService, Local/BlobAttachmentStore
+    News/                        NewsService, FeedReader (RSS/Atom parsing and merging, also used by SportsNewsService)
   JtsCommandCenter.Web/          Blazor Web App (UI + startup only)
     Endpoints/                   Minimal API endpoints (GET /attachments/{id})
     Components/
       App.razor                  HTML shell, head, scripts
       Routes.razor               Router
       Layout/                    MainLayout (sidebar + topbar shell), NavMenu, ReconnectModal
-      Pages/                     Routable pages (Home = dashboard; Sports/ = Sports Center pages; Projects/ = board and project page)
-      SportsCenter/              Sports Center components (ScoreboardCard, NewsList, GameDetailView, WinProbabilityChart)
+      Pages/                     Routable pages (Home = dashboard; News; Sports/ = Sports Center pages; Projects/ = board and project page)
+      SportsCenter/              Sports Center components (ScoreboardCard, GameDetailView, WinProbabilityChart)
       Projects/                  Project components (WorkItemCard, ProjectEditor/SubtaskEditor dialogs, SubtaskPanel, MarkdownEditor, WorkLog, LinkList, DateText, ProjectChangeNotifier)
       Dashboard/                 Dashboard cards (Weather, Todo, Projects, Sports, News)
-      Shared/                    Reusable components (DashboardCard, WeatherIcon, KanbanBoard, Modal, SidePanel, ReasonPrompt, Markdown/MarkdownText)
+      Shared/                    Reusable components (DashboardCard, WeatherIcon, KanbanBoard, Modal, SidePanel, ReasonPrompt, Markdown/MarkdownText, NewsList, RelativeTime)
     wwwroot/app.css              Global theme: color tokens + base styles
     wwwroot/lib/sortablejs/      Vendored SortableJS 1.15.6 (MIT), used by KanbanBoard for drag and drop
 tests/
@@ -85,7 +87,8 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 - Component-specific styles go in a scoped `Component.razor.css` file next to the component. Use `::deep` when styling child components (e.g. `NavLink`).
 - Layout must stay responsive: below 900px the sidebar becomes an off-canvas drawer toggled from the top bar.
 - Dashboard (`Pages/Home.razor`) uses CSS grid areas: 1 column on phones (to-do first), 2 columns from 720px, 3 columns from 1200px. New cards wrap their content in `<DashboardCard Title="...">` and get a grid area in `Home.razor.css`.
-- Only the News card still uses hard-coded placeholder data (the header badge says so). When wiring real data, add the interface and models to Core, the implementation to Infrastructure, and inject the interface (Weather is the reference pattern).
+- Every card shows real data. When wiring a new source, add the interface and models to Core, the implementation to Infrastructure, and inject the interface (Weather is the reference pattern).
+- **News card:** the newest story from each news category, in category order (`NewsMath.Highlights`, which skips a story already shown under an earlier category). Each topic label links to that category on the News page.
 - **Projects card:** shows Active, then On Hold, projects grouped by area (up to 5 each), each with progress, and links to the project page.
 - **Due Today card (`TodoCard`):**
   - **What it lists:** `GetDueSubtasksAsync` (unfinished subtasks due today or overdue).
@@ -105,6 +108,7 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 
 - **Weather:** [Open-Meteo](https://open-meteo.com/) forecast API, free and with no API key. Configured under `Weather` in `appsettings.json` (location, coordinates, temperature/wind/precipitation units, `CacheMinutes`, `RefreshMinutes`). The card shows current conditions, feels-like, wind/gusts, humidity, precipitation chance and snowfall (today and per forecast day), and sunrise/sunset. `OpenMeteoWeatherService` is a typed `HttpClient` that caches the report in `IMemoryCache`; `WeatherCard` re-requests on a `PeriodicTimer` while open and keeps showing the last good report if a refresh fails. Times shown come from the API in the location's own time zone, not server time.
 - **Sports:** ESPN's public, undocumented site API (`site.api.espn.com`, no API key). Configured under `Sports` in `appsettings.json`: a `Teams` list (ESPN sport/league/team slugs, a `Display` mode, `AlwaysShowTies`), plus `TimeZone`, `CacheMinutes`, `LiveCacheSeconds`, `RefreshMinutes`. Each team's regular-season and postseason schedules are fetched (`teams/{team}/schedule?seasontype=2|3`) and parsed as loose JSON, since shapes vary by sport. `LastAndNext` mode (Vikings, Wild) shows the last final and the next or live game. `Series` mode (Twins) shows every game of the current series plus the next series. Between series, the one that just finished stays current until the next one's first game day. When a team has nothing left to play, the section shows a season recap instead: the record, plus the division place and full division name from `apis/v2/.../standings`. One team failing shows "unavailable" for that section only. While a game is live, the cache drops to `LiveCacheSeconds` and the card re-checks every minute.
+- **News** (`/news`, dashboard News card): plain RSS 2.0 / Atom feeds, configured under `News` in `appsettings.json`. `Categories` lists the topics in display order (Minnesota, Military, Politics, Technology, Business, Manufacturing, World), each with a `Key` (used as `?category=`), `Name`, `Feeds` and optional `ExcludeKeywords`; top-level `ExcludeKeywords` apply to every category. `NewsService` fetches every feed in parallel, drops items older than `MaxAgeDays`, dedupes by normalized title, and keeps `ArticlesPerCategory` per topic. One failing feed is listed in that category's `FailedSources`; the service throws only when every feed fails. The report is cached for `CacheMinutes` (2 minutes when a feed failed), and the card and page re-request every `RefreshMinutes`. The News page shows every topic as a card ("All") or one topic with teasers. Before adding a feed, check that it returns items with dates (some sites' "local" feeds also carry wire stories).
 - **Sports Center** (`/sports/football`, `/sports/baseball`, `/sports/hockey`; Baseball and Hockey are placeholders): configured under `SportsCenter:Leagues` keyed by ESPN league slug. `EspnScoreboardService` loads a league week (`scoreboard?seasontype=&week=`) and the season calendar used for paging (regular season and postseason only). Completed weeks are cached longer and live weeks shorter. `ScoreboardCard` pins games involving `PinnedTeams` (Vikings, Bengals) at the top, and also leaves them in their normal day group. It shows a pinned team's bye week too. `SportsNewsService` merges ESPN's league news with RSS/Atom `Feeds` (deduped by title, `ExcludeKeywords` filters sportsbook promos). Team news (`FocusTeam`) comes from the team's own feeds, ESPN articles tagged with the team (only when the story is about at most two teams or names the team), and league-feed headlines that contain a `Keywords` entry. ESPN's `news?team=` filter is ignored by the API, so don't rely on it. Feed requests send a User-Agent because some hosts block requests without one.
 - **Game pages** (`/sports/football/game/{eventId}`): scoreboard tiles link here. The scoreboard keeps its week in the query string (`?type=2&week=5`), so a game page's back link returns to the same week. `EspnGameDetailService` reads ESPN's `summary?event=` endpoint and returns:
   - the scorebug and line score, game info (venue, attendance, TV, weather, officials), and the injury report
@@ -117,7 +121,7 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 
 ## Database and projects
 
-- **Storage:** EF Core on SQL Server. Development uses LocalDB (`ConnectionStrings:CommandCenter` in `appsettings.Development.json`), and the app applies pending migrations on startup in Development only. Production is Azure SQL: the connection string comes from App Service configuration (Managed Identity, no password), and migrations are applied by the deployment pipeline. `EnableRetryOnFailure` covers transient errors, including a serverless database waking up.
+- **Storage:** EF Core on SQL Server. Development uses a local SQL Server Express instance, `.\SQLEXPRESS`, with Windows authentication (`ConnectionStrings:CommandCenter` in `appsettings.Development.json`, and `DesignTimeDbContextFactory` for `dotnet ef`). Don't switch it back to LocalDB: when Visual Studio Insiders launches the app (through `VsDebugConsole`), LocalDB can't find or start its instances, though the same app works from a terminal. The app applies pending migrations on startup in Development only. Production is Azure SQL: the connection string comes from App Service configuration (Managed Identity, no password), and migrations are applied by the deployment pipeline. `EnableRetryOnFailure` covers transient errors, including a serverless database waking up.
 - **DbContext usage:** `CommandCenterDbContext` is `internal`. Services take `IDbContextFactory<CommandCenterDbContext>` and create one short-lived context per operation, because a Blazor circuit is long-lived and a context isn't thread-safe. Reads use `AsNoTracking`.
 - **Model:** a `Project` (Work/Personal `Area`) has `Subtask`s (two levels only), plus `Note`s and `Link`s. Notes and links always carry `ProjectId`, and also `SubtaskId` when they belong to a subtask, so the project's work log includes its subtasks' notes. Enums are stored as strings, and `DateTime`s are UTC.
 - **Boards:**
