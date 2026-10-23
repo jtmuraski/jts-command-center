@@ -230,6 +230,344 @@ input, select, textarea {
     }
 
 /* --------------------------------------------------------------------------
+   Forms (editor dialogs)
+   -------------------------------------------------------------------------- */
+
+.cc-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.cc-form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 1rem;
+}
+
+.cc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+    .cc-field input, .cc-field select, .cc-field textarea {
+        width: 100%;
+        min-height: 2.6rem; /* touch target */
+    }
+
+    .cc-field textarea {
+        resize: vertical;
+        line-height: 1.5;
+    }
+
+.cc-label {
+    padding: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--cc-text-muted);
+}
+
+.cc-hint {
+    margin-left: 0.35rem;
+    font-weight: 400;
+    color: var(--cc-text-faint);
+}
+
+/* Radio buttons drawn as a joined row of toggle buttons. */
+.cc-segmented {
+    display: flex;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius);
+    overflow: hidden;
+}
+
+    .cc-segmented label {
+        flex: 1;
+        position: relative;
+    }
+
+        .cc-segmented label + label {
+            border-left: 1px solid var(--cc-border);
+        }
+
+    .cc-segmented input {
+        position: absolute;
+        opacity: 0;
+        inset: 0;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .cc-segmented span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.5rem;
+        padding: 0 0.75rem;
+        font-size: 0.9rem;
+        color: var(--cc-text-muted);
+        background: var(--cc-bg);
+    }
+
+    .cc-segmented input:checked + span {
+        color: var(--cc-text-strong);
+        background: var(--cc-primary-soft);
+        box-shadow: inset 0 -2px 0 var(--cc-primary-hover);
+    }
+
+    .cc-segmented input:focus-visible + span {
+        outline: 2px solid var(--cc-accent);
+        outline-offset: -2px;
+    }
+
+.cc-form-errors {
+    margin: 0;
+    padding: 0.6rem 0.85rem 0.6rem 1.75rem;
+    border: 1px solid var(--cc-danger);
+    border-radius: var(--cc-radius);
+    color: var(--cc-text);
+    font-size: 0.9rem;
+}
+
+.cc-form-notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--cc-warning);
+    border-radius: var(--cc-radius);
+    font-size: 0.9rem;
+}
+
+/* Pushes the items after it to the far end of a flex row (dialog footers). */
+.cc-spacer {
+    flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Status colors: each sets --status-color for board columns, chips, and
+   "Move to" options. Class names are the lowercased status enum values.
+   -------------------------------------------------------------------------- */
+
+.status-planned, .status-todo { --status-color: var(--cc-info); }
+.status-active, .status-inprogress { --status-color: var(--cc-accent); }
+.status-onhold { --status-color: var(--cc-warning); }
+.status-blocked { --status-color: var(--cc-danger); }
+.status-done { --status-color: var(--cc-success); }
+
+/* A small label such as an area, status, or subtask name. */
+.cc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: var(--cc-radius-sm);
+    padding: 0.05rem 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--cc-text-muted);
+    background: var(--cc-surface-raised);
+    white-space: nowrap;
+}
+
+    .cc-chip[class*="status-"]::before {
+        content: "";
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        background: var(--status-color);
+    }
+
+.cc-chip-work {
+    color: var(--cc-work);
+    background: var(--cc-work-soft);
+}
+
+.cc-chip-personal {
+    color: var(--cc-personal);
+    background: var(--cc-personal-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Action sheets (a card's "..." menu shown in a small Modal)
+   -------------------------------------------------------------------------- */
+
+.cc-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.cc-sheet-label {
+    margin: 0.5rem 0 0.15rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cc-text-faint);
+}
+
+    .cc-sheet-label:first-child {
+        margin-top: 0;
+    }
+
+.cc-sheet-option {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 0.85rem;
+    border: 1px solid var(--cc-border-subtle);
+    border-left: 3px solid var(--status-color, var(--cc-border));
+    border-radius: var(--cc-radius);
+    background: var(--cc-surface-raised);
+    color: var(--cc-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+    .cc-sheet-option:hover {
+        color: var(--cc-text-strong);
+        border-color: var(--cc-border);
+        border-left-color: var(--status-color, var(--cc-border));
+    }
+
+    .cc-sheet-option:focus-visible {
+        outline: 2px solid var(--cc-accent);
+    }
+
+    .cc-sheet-option.is-danger {
+        color: var(--cc-danger);
+    }
+
+/* --------------------------------------------------------------------------
+   Banner: a dismissable one-line message at the top of a page
+   -------------------------------------------------------------------------- */
+
+.cc-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    background: var(--cc-surface-raised);
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius);
+    font-size: 0.9rem;
+}
+
+    .cc-banner > span {
+        flex: 1;
+    }
+
+.cc-banner-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: none;
+    border-radius: var(--cc-radius);
+    background: none;
+    color: var(--cc-text-muted);
+    cursor: pointer;
+}
+
+    .cc-banner-close svg {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+    }
+
+    .cc-banner-close:hover {
+        color: var(--cc-text-strong);
+    }
+
+/* --------------------------------------------------------------------------
+   Rendered Markdown (Shared/Markdown)
+   -------------------------------------------------------------------------- */
+
+.cc-markdown {
+    overflow-wrap: anywhere;
+}
+
+    .cc-markdown > :first-child {
+        margin-top: 0;
+    }
+
+    .cc-markdown > :last-child {
+        margin-bottom: 0;
+    }
+
+    .cc-markdown p, .cc-markdown ul, .cc-markdown ol, .cc-markdown pre, .cc-markdown blockquote, .cc-markdown table {
+        margin: 0 0 0.75rem;
+    }
+
+    .cc-markdown ul, .cc-markdown ol {
+        padding-left: 1.4rem;
+    }
+
+    .cc-markdown h1, .cc-markdown h2, .cc-markdown h3, .cc-markdown h4 {
+        margin: 1rem 0 0.5rem;
+        font-size: 1rem;
+    }
+
+    .cc-markdown a {
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .cc-markdown pre {
+        padding: 0.65rem 0.8rem;
+        overflow-x: auto;
+    }
+
+        .cc-markdown pre code {
+            padding: 0;
+            background: none;
+        }
+
+    .cc-markdown blockquote {
+        padding-left: 0.85rem;
+        border-left: 3px solid var(--cc-border);
+        color: var(--cc-text-muted);
+    }
+
+    .cc-markdown img {
+        max-width: 100%;
+        height: auto;
+        border-radius: var(--cc-radius);
+        border: 1px solid var(--cc-border-subtle);
+    }
+
+    .cc-markdown table {
+        border-collapse: collapse;
+        display: block;
+        overflow-x: auto;
+    }
+
+    .cc-markdown th, .cc-markdown td {
+        padding: 0.3rem 0.6rem;
+        border: 1px solid var(--cc-border);
+    }
+
+    .cc-markdown .task-list-item {
+        list-style: none;
+        margin-left: -1.2rem;
+    }
+
+    .cc-markdown hr {
+        border: none;
+        border-top: 1px solid var(--cc-border);
+    }
+
+/* --------------------------------------------------------------------------
    Blazor validation + error boundary (re-themed from template defaults)
    -------------------------------------------------------------------------- */
 

@@ -298,6 +298,10 @@ public sealed class ProjectServiceTests : IDisposable
     public void Today_IsInTheConfiguredTimeZone() => Assert.Equal(ChicagoToday, service.Today);
 
     [Fact]
+    public void ToLocalTime_ConvertsToTheConfiguredTimeZone() =>
+        Assert.Equal(new DateTime(2026, 10, 23, 22, 0, 0), service.ToLocalTime(Start.UtcDateTime));
+
+    [Fact]
     public async Task GetDueSubtasks_UsesTheConfiguredTimeZonesToday()
     {
         var project = await NewProject();

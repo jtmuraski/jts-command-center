@@ -2,17 +2,17 @@
 
 <Modal Title="@(IsNew ? "New project" : "Edit project")" OnClose="() => OnClose.InvokeAsync()" AutoFocus="false">
     <ChildContent>
-        <form id="@formId" class="editor" @onsubmit="SaveAsync">
+        <form id="@formId" class="cc-form" @onsubmit="SaveAsync">
             @if (conflict)
             {
-                <div class="notice" role="alert">
+                <div class="cc-form-notice" role="alert">
                     <span>This project was changed on another device after you opened it.</span>
                     <button type="button" class="cc-btn cc-btn-ghost" @onclick="LoadLatestAsync">Load latest (discards your edits)</button>
                 </div>
             }
             @if (errors.Count > 0)
             {
-                <ul class="errors" role="alert">
+                <ul class="cc-form-errors" role="alert">
                     @foreach (var error in errors)
                     {
                         <li>@error</li>
@@ -20,16 +20,16 @@
                 </ul>
             }
 
-            <label class="field">
-                <span class="label">Title</span>
+            <label class="cc-field">
+                <span class="cc-label">Title</span>
                 <input @ref="titleInput" @bind="title" @bind:event="oninput" maxlength="@ProjectMath.MaxTitleLength"
                        placeholder="e.g. Workflow update" autocomplete="off" />
             </label>
 
-            <div class="row">
-                <fieldset class="field">
-                    <legend class="label">Area</legend>
-                    <div class="segmented">
+            <div class="cc-form-row">
+                <fieldset class="cc-field">
+                    <legend class="cc-label">Area</legend>
+                    <div class="cc-segmented">
                         @foreach (var option in Enum.GetValues<WorkArea>())
                         {
                             <label>
@@ -40,9 +40,9 @@
                     </div>
                 </fieldset>
 
-                <fieldset class="field">
-                    <legend class="label">Priority</legend>
-                    <div class="segmented">
+                <fieldset class="cc-field">
+                    <legend class="cc-label">Priority</legend>
+                    <div class="cc-segmented">
                         @foreach (var option in Enum.GetValues<Priority>())
                         {
                             <label>
@@ -54,19 +54,19 @@
                 </fieldset>
             </div>
 
-            <div class="row">
-                <label class="field">
-                    <span class="label">Start date</span>
+            <div class="cc-form-row">
+                <label class="cc-field">
+                    <span class="cc-label">Start date</span>
                     <input type="date" @bind="startDate" />
                 </label>
-                <label class="field">
-                    <span class="label">Due date</span>
+                <label class="cc-field">
+                    <span class="cc-label">Due date</span>
                     <input type="date" @bind="dueDate" />
                 </label>
                 @if (IsNew)
                 {
-                    <label class="field">
-                        <span class="label">Column</span>
+                    <label class="cc-field">
+                        <span class="cc-label">Column</span>
                         <select @bind="status">
                             @foreach (var option in Enum.GetValues<ProjectStatus>())
                             {
@@ -77,8 +77,8 @@
                 }
             </div>
 
-            <label class="field">
-                <span class="label">Description <span class="hint">Markdown works</span></span>
+            <label class="cc-field">
+                <span class="cc-label">Description <span class="cc-hint">Markdown works</span></span>
                 <textarea rows="7" @bind="description"
                           placeholder="What is this project, and what does done look like?"></textarea>
             </label>
@@ -89,7 +89,7 @@
         {
             <button type="button" class="cc-btn cc-btn-ghost" disabled="@saving" @onclick="() => OnArchive.InvokeAsync(Project!)">Archive</button>
         }
-        <span class="spacer"></span>
+        <span class="cc-spacer"></span>
         <button type="button" class="cc-btn cc-btn-ghost" @onclick="() => OnClose.InvokeAsync()">Cancel</button>
         <button type="submit" class="cc-btn" form="@formId" disabled="@(saving || string.IsNullOrWhiteSpace(title))">
             @(IsNew ? "Create project" : "Save")

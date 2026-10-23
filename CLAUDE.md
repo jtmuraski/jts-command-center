@@ -37,15 +37,15 @@ src/
       App.razor                  HTML shell, head, scripts
       Routes.razor               Router
       Layout/                    MainLayout (sidebar + topbar shell), NavMenu, ReconnectModal
-      Pages/                     Routable pages (Home = dashboard; Sports/ = Sports Center pages; Projects/ = projects board)
+      Pages/                     Routable pages (Home = dashboard; Sports/ = Sports Center pages; Projects/ = board and project page)
       SportsCenter/              Sports Center components (ScoreboardCard, NewsList, GameDetailView, WinProbabilityChart)
-      Projects/                  Project components (ProjectCard, ProjectEditor dialog, DateText)
+      Projects/                  Project components (WorkItemCard, ProjectEditor/SubtaskEditor dialogs, WorkLog, LinkList, DateText)
       Dashboard/                 Dashboard cards (Weather, Todo, Projects, Sports, News)
-      Shared/                    Reusable components (DashboardCard wrapper, WeatherIcon, KanbanBoard, Modal)
+      Shared/                    Reusable components (DashboardCard, WeatherIcon, KanbanBoard, Modal, ReasonPrompt, Markdown/MarkdownText)
     wwwroot/app.css              Global theme: color tokens + base styles
     wwwroot/lib/sortablejs/      Vendored SortableJS 1.15.6 (MIT), used by KanbanBoard for drag and drop
 tests/
-  JtsCommandCenter.Tests/        xUnit tests for Core logic and Infrastructure services
+  JtsCommandCenter.Tests/        xUnit tests for Core logic, Infrastructure services, and Web helpers (e.g. MarkdownText)
     Support/                     FakeHttpHandler (canned HTTP responses), TestDatabase (in-memory SQLite), ESPN JSON fixtures
 ```
 
@@ -76,7 +76,11 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
   - Text: `--cc-text`, `--cc-text-strong`, `--cc-text-muted`, `--cc-text-faint`
   - Accents: `--cc-primary` (steel blue), `--cc-accent` (slate teal), `--cc-accent-2` (worn brass), `--cc-accent-3` (dusty violet)
   - Status: `--cc-success`, `--cc-warning`, `--cc-danger`, `--cc-info`
-- Shared utility classes in `app.css`: `.cc-card`, `.cc-btn`, `.cc-btn-ghost`, `.cc-muted`.
+- Shared utility classes in `app.css`:
+  - Basics: `.cc-card`, `.cc-btn` (plus `.cc-btn-ghost`, `.cc-btn-danger`), `.cc-muted`.
+  - Forms: `.cc-form`, `.cc-form-row`, `.cc-field`, `.cc-label`, `.cc-hint`, `.cc-segmented` (radio buttons drawn as a toggle row), `.cc-form-errors`, `.cc-form-notice`, `.cc-spacer`.
+  - Other: `.cc-chip` (plus `.cc-chip-work`, `.cc-chip-personal`), `.cc-sheet*` for action sheets, `.cc-banner`, and `.cc-markdown`.
+  - `.status-<enum value lowercased>` (e.g. `status-onhold`, `status-inprogress`) sets `--status-color`, which board columns, chips and sheet options use.
 - Component-specific styles go in a scoped `Component.razor.css` file next to the component. Use `::deep` when styling child components (e.g. `NavLink`).
 - Layout must stay responsive: below 900px the sidebar becomes an off-canvas drawer toggled from the top bar.
 - Dashboard (`Pages/Home.razor`) uses CSS grid areas: 1 column on phones (to-do first), 2 columns from 720px, 3 columns from 1200px. New cards wrap their content in `<DashboardCard Title="...">` and get a grid area in `Home.razor.css`.
@@ -84,7 +88,8 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 - **Boards:** `Shared/KanbanBoard<TItem, TColumn>` renders fixed enum columns and handles drag and drop through SortableJS (pointer events, so mouse, pen and touch behave the same; on touch, a short press picks a card up so swipes still scroll).
   - The drag script never leaves its DOM changes in place: on drop it puts the card back and raises `OnMove`, and the parent updates its data and re-renders. Keep each column list free of anything but card elements, because the script indexes its child nodes.
   - Give every card a non-drag way to move (the "···" actions sheet) for keyboard use and in case scripts fail. Mark buttons inside a card `data-no-drag`.
-- **Dialogs:** use `Shared/Modal` (render it only while open). It is full screen on phones. Forms leave `CloseOnBackdrop` off.
+- **Dialogs:** use `Shared/Modal` (render it only while open). It is full screen on phones. Forms leave `CloseOnBackdrop` off. `Shared/ReasonPrompt` asks for the optional On Hold / Blocked reason.
+- **Markdown:** render user text with `<Markdown Text="..." />`. `MarkdownText` (Markdig) escapes raw HTML and neutralizes links and images that aren't relative, http(s) or (for links) mailto. Never render user text as a `MarkupString` any other way.
 - New sections get a link in `Components/Layout/NavMenu.razor` (group under a `nav-section` heading). Groups that hold several pages (like Sports Center) use the collapsible `nav-group-toggle` pattern: open/closed is remembered in `localStorage`, and the group opens itself when you arrive at one of its pages from elsewhere.
 
 ## Integrations
@@ -132,5 +137,8 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 
 <!-- TODO: Fill in as decisions are made. -->
 - Authentication (likely Microsoft Entra ID, single user) — required before deploying publicly
-- Project management UI: Phase 1 (data layer) and Phase 2 (the `/projects` board with drag and drop, the editor dialog, Work/Personal filter, and archive) are done. Clicking a card currently opens the editor; once the project page exists it should open that instead. Still to build: the project page with its subtask board and work log, the subtask side panel, image attachments in Markdown descriptions (Azure Blob Storage behind an `IAttachmentStore`, private container served through the app), and wiring the dashboard Projects and Due Today cards to `IProjectService`
+- Project management UI: Phases 1-3 are done.
+  - Done so far: the data layer; the `/projects` board (drag and drop, editor dialog, Work/Personal filter, archive); and the project page `/projects/{id}` (header, subtask board, Markdown description, links, work log).
+  - Clicking a subtask card currently opens `SubtaskEditor`. Phase 4 replaces that with a side panel that also shows the subtask's own `WorkLog` and `LinkList`, which already accept a `SubtaskId`.
+  - Still to build: the subtask side panel, image attachments in Markdown descriptions (Azure Blob Storage behind an `IAttachmentStore`, private container served through the app), and wiring the dashboard Projects and Due Today cards to `IProjectService`
 - Azure deployment pipeline (GitHub Actions to App Service)

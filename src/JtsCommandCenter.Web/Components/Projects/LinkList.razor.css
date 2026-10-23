@@ -1,0 +1,135 @@
+.link-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+    .links li {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: var(--cc-surface-raised);
+        border: 1px solid var(--cc-border-subtle);
+        border-radius: var(--cc-radius);
+    }
+
+    .links a {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        min-height: 2.6rem;
+        padding: 0.3rem 0.75rem;
+        color: var(--cc-text);
+    }
+
+        .links a:hover {
+            color: var(--cc-text-strong);
+        }
+
+        .links a:focus-visible {
+            outline: 2px solid var(--cc-accent);
+            border-radius: var(--cc-radius);
+        }
+
+        .links a svg {
+            flex: none;
+            fill: none;
+            stroke: var(--cc-accent);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+.label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.host {
+    margin-left: auto;
+    flex: none;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.78rem;
+    color: var(--cc-text-faint);
+}
+
+.remove {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border: none;
+    border-radius: var(--cc-radius);
+    background: none;
+    color: var(--cc-text-faint);
+    cursor: pointer;
+}
+
+    .remove svg {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+    }
+
+    .remove:hover {
+        color: var(--cc-danger);
+    }
+
+    .remove:focus-visible {
+        outline: 2px solid var(--cc-accent);
+    }
+
+.empty {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.add {
+    align-self: flex-start;
+    min-height: 2.5rem;
+}
+
+.add-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+    .add-form input {
+        width: 100%;
+        min-height: 2.6rem;
+    }
+
+.add-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+    .add-actions .cc-btn {
+        min-height: 2.5rem;
+    }
+
+.error {
+    margin: 0;
+    color: var(--cc-danger);
+    font-size: 0.85rem;
+}

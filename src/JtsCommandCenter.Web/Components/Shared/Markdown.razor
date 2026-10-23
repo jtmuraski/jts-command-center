@@ -1,0 +1,7 @@
+@* Rendered Markdown, styled by .cc-markdown in app.css (scoped styles can't reach generated HTML). *@
+<div class="cc-markdown @Class">@((MarkupString)MarkdownText.ToHtml(Text))</div>
+
+@code {
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public string? Class { get; set; }
+}

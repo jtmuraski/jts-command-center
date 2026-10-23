@@ -1,6 +1,6 @@
-.project-card {
-    --area-color: var(--cc-work);
-    --area-soft: var(--cc-work-soft);
+.work-card {
+    --area-color: var(--cc-border);
+    --area-soft: var(--cc-surface);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -14,22 +14,27 @@
     transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-    .project-card.area-personal {
+    .work-card.area-work {
+        --area-color: var(--cc-work);
+        --area-soft: var(--cc-work-soft);
+    }
+
+    .work-card.area-personal {
         --area-color: var(--cc-personal);
         --area-soft: var(--cc-personal-soft);
     }
 
-    .project-card:hover {
+    .work-card:hover {
         border-color: var(--cc-border);
         border-left-color: var(--area-color);
     }
 
-    .project-card:focus-visible {
+    .work-card:focus-visible {
         outline: 2px solid var(--cc-accent);
         outline-offset: 2px;
     }
 
-    .project-card.is-done .title {
+    .work-card.is-done .title {
         color: var(--cc-text-muted);
     }
 
@@ -137,6 +142,10 @@
     height: 100%;
     border-radius: inherit;
     background: var(--area-color);
+}
+
+.work-card:not([class*="area-"]) .fill {
+    background: var(--cc-accent);
 }
 
 .progress-text {

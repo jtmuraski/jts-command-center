@@ -5,8 +5,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="JtsCommandCenter.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\JtsCommandCenter.Core\JtsCommandCenter.Core.csproj" />
     <ProjectReference Include="..\JtsCommandCenter.Infrastructure\JtsCommandCenter.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Markdig" Version="1.4.2" />
   </ItemGroup>
 
 </Project>

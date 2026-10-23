@@ -1,0 +1,157 @@
+.work-log {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.composer, .edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+    .composer textarea, .edit-form textarea {
+        width: 100%;
+        min-height: 4.5rem;
+        resize: vertical;
+        line-height: 1.5;
+    }
+
+.composer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+    .composer-actions .cc-hint {
+        margin: 0;
+        font-size: 0.78rem;
+    }
+
+    .composer-actions .cc-btn {
+        min-height: 2.5rem;
+    }
+
+.error {
+    margin: 0;
+    color: var(--cc-danger);
+    font-size: 0.85rem;
+}
+
+.activity-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    align-self: flex-start;
+    min-height: 2.25rem;
+    font-size: 0.85rem;
+    color: var(--cc-text-muted);
+    cursor: pointer;
+}
+
+    .activity-toggle input {
+        width: 1.05rem;
+        height: 1.05rem;
+        accent-color: var(--cc-primary);
+    }
+
+.empty {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.entries {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.entry {
+    padding: 0.7rem 0.85rem 0.8rem;
+    background: var(--cc-surface-raised);
+    border: 1px solid var(--cc-border-subtle);
+    border-radius: var(--cc-radius);
+}
+
+.entry-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.6rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--cc-text-faint);
+}
+
+    .entry-header time {
+        color: var(--cc-text-muted);
+        font-weight: 600;
+    }
+
+.edited {
+    font-style: italic;
+}
+
+.entry-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 0.25rem;
+}
+
+.link {
+    min-height: 2rem;
+    padding: 0 0.5rem;
+    border: none;
+    border-radius: var(--cc-radius-sm);
+    background: none;
+    color: var(--cc-text-muted);
+    font: inherit;
+    cursor: pointer;
+}
+
+    .link:hover {
+        color: var(--cc-text-strong);
+        background: var(--cc-surface);
+    }
+
+    .link.danger {
+        color: var(--cc-danger);
+    }
+
+    .link:focus-visible {
+        outline: 2px solid var(--cc-accent);
+    }
+
+/* Status changes: one quiet line each. */
+.activity {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.6rem;
+    padding: 0.15rem 0.85rem;
+    font-size: 0.82rem;
+    color: var(--cc-text-muted);
+}
+
+    .activity::before {
+        content: "";
+        width: 0.4rem;
+        height: 0.4rem;
+        border-radius: 50%;
+        background: var(--cc-text-faint);
+    }
+
+    .activity time {
+        margin-left: auto;
+        font-size: 0.75rem;
+        color: var(--cc-text-faint);
+    }
+
+.activity-text {
+    overflow-wrap: anywhere;
+}

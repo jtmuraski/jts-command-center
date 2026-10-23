@@ -1,0 +1,452 @@
+@page "/projects/{Id:int}"
+@inject IProjectService Projects
+@inject NavigationManager Navigation
+@inject ILogger<ProjectPage> Logger
+
+<PageTitle>@(project?.Title ?? "Project") · Command Center</PageTitle>
+
+<a class="back" href="projects">
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+    Projects
+</a>
+
+@if (project is null)
+{
+    <p class="state cc-muted">
+        @(notFound ? "This project doesn't exist. It may have been deleted." : loadFailed ? "Couldn't load this project. Try reloading the page." : "Loading…")
+    </p>
+}
+else
+{
+    var progress = ProjectMath.ProgressOf(project.Subtasks);
+    var overdue = ProjectMath.IsOverdue(project, today);
+
+    <header class="project-header area-@project.Area.ToString().ToLowerInvariant()">
+        <div class="title-row">
+            <h1>@project.Title</h1>
+            <div class="header-actions">
+                <button type="button" class="cc-btn cc-btn-ghost" @onclick="() => editingProject = true">Edit</button>
+                <button type="button" class="icon-button" title="Actions" aria-label="Project actions" @onclick="() => projectActionsOpen = true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                        <circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="chips">
+            <span class="cc-chip cc-chip-@project.Area.ToString().ToLowerInvariant()">@project.Area</span>
+            <span class="cc-chip status-@project.Status.ToString().ToLowerInvariant()">@ProjectMath.DisplayName(project.Status)</span>
+            @if (project.Priority != Priority.Normal)
+            {
+                <span class="cc-chip priority-@project.Priority.ToString().ToLowerInvariant()">@project.Priority priority</span>
+            }
+            @if (project.ArchivedAt is not null)
+            {
+                <span class="cc-chip">Archived</span>
+            }
+        </div>
+
+        <dl class="facts">
+            @if (project.StartDate is DateOnly start)
+            {
+                <div><dt>Start</dt><dd>@DateText.Short(start, today)</dd></div>
+            }
+            @if (project.DueDate is DateOnly due)
+            {
+                <div class="@(overdue ? "is-overdue" : "")"><dt>Due</dt><dd>@DateText.Short(due, today)@(overdue ? " · overdue" : "")</dd></div>
+            }
+            @if (project.CompletedAt is DateTime completed)
+            {
+                <div><dt>Completed</dt><dd>@DateText.Short(DateOnly.FromDateTime(Projects.ToLocalTime(completed)), today)</dd></div>
+            }
+            <div><dt>Created</dt><dd>@DateText.Short(DateOnly.FromDateTime(Projects.ToLocalTime(project.CreatedAt)), today)</dd></div>
+        </dl>
+
+        @if (project.Status == ProjectStatus.OnHold && project.BlockedReason is { } holdReason)
+        {
+            <p class="hold-reason"><strong>On hold:</strong> @holdReason</p>
+        }
+
+        @if (progress.Total > 0)
+        {
+            <div class="progress">
+                <div class="bar"><div class="fill" style="width: @(progress.Percent)%"></div></div>
+                <span>@progress.Done of @progress.Total subtasks done</span>
+            </div>
+        }
+    </header>
+
+    @if (notice is not null)
+    {
+        <div class="cc-banner" role="status">
+            <span>@notice</span>
+            <button type="button" class="cc-banner-close" aria-label="Dismiss" @onclick="() => notice = null">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+        </div>
+    }
+
+    <section class="subtasks" aria-labelledby="subtasks-heading">
+        <div class="section-heading">
+            <h2 id="subtasks-heading">Subtasks</h2>
+            <button type="button" class="cc-btn" @onclick="() => OpenNewSubtask(SubtaskStatus.ToDo)">+ Add subtask</button>
+        </div>
+        <KanbanBoard TItem="Subtask" TColumn="SubtaskStatus"
+                     Columns="SubtaskColumns" Items="project.Subtasks" ColumnOf="s => s.Status" IdOf="s => s.Id"
+                     ColumnTitle="ProjectMath.DisplayName" ColumnClass="StatusClass"
+                     OnMove="OnSubtaskDropAsync" OnAdd="OpenNewSubtask" EmptyText="Drop a subtask here">
+            <CardTemplate Context="subtask">
+                @{
+                    var noteCount = project.Notes.Count(n => n.SubtaskId == subtask.Id && n.Kind == NoteKind.Entry);
+                }
+                <WorkItemCard Title="@subtask.Title" Today="today" Done="subtask.Status == SubtaskStatus.Done"
+                              Priority="subtask.Priority" DueDate="subtask.DueDate"
+                              Reason="@(subtask.Status == SubtaskStatus.Blocked ? subtask.BlockedReason : null)"
+                              OnOpen="() => OpenSubtask(subtask)" OnActions="() => subtaskActionsFor = subtask">
+                    <Extra>
+                        @if (noteCount > 0)
+                        {
+                            <span>@noteCount @(noteCount == 1 ? "note" : "notes")</span>
+                        }
+                    </Extra>
+                </WorkItemCard>
+            </CardTemplate>
+        </KanbanBoard>
+    </section>
+
+    <div class="details">
+        <div class="details-side">
+            <section class="panel" aria-labelledby="description-heading">
+                <div class="section-heading">
+                    <h2 id="description-heading">Description</h2>
+                    @if (!string.IsNullOrWhiteSpace(project.Description))
+                    {
+                        <button type="button" class="cc-btn cc-btn-ghost small" @onclick="() => editingProject = true">Edit</button>
+                    }
+                </div>
+                @if (string.IsNullOrWhiteSpace(project.Description))
+                {
+                    <p class="cc-muted empty">
+                        No description yet.
+                        <button type="button" class="inline-link" @onclick="() => editingProject = true">Add one</button>
+                    </p>
+                }
+                else
+                {
+                    <Markdown Text="@project.Description" />
+                }
+            </section>
+
+            <section class="panel" aria-labelledby="links-heading">
+                <div class="section-heading">
+                    <h2 id="links-heading">Links</h2>
+                </div>
+                <LinkList ProjectId="project.Id" Links="ProjectLinks" OnChanged="LoadAsync" />
+            </section>
+        </div>
+
+        <section class="panel log" aria-labelledby="log-heading">
+            <div class="section-heading">
+                <h2 id="log-heading">Work log</h2>
+            </div>
+            <WorkLog ProjectId="project.Id" Notes="project.Notes" SubtaskTitles="SubtaskTitles" OnChanged="LoadAsync" />
+        </section>
+    </div>
+
+    @if (editingProject)
+    {
+        <ProjectEditor Project="project" OnSaved="OnProjectSavedAsync" OnClose="() => editingProject = false" OnArchive="ArchiveAsync" />
+    }
+
+    @if (projectActionsOpen)
+    {
+        <Modal Title="@project.Title" Size="small" CloseOnBackdrop="true" OnClose="() => projectActionsOpen = false">
+            <div class="cc-sheet">
+                <p class="cc-sheet-label">Move project to</p>
+                @foreach (var status in Enum.GetValues<ProjectStatus>().Where(s => s != project.Status))
+                {
+                    <button type="button" class="cc-sheet-option status-@status.ToString().ToLowerInvariant()" @onclick="() => RequestProjectMove(status)">
+                        @ProjectMath.DisplayName(status)
+                    </button>
+                }
+                <p class="cc-sheet-label">Project</p>
+                <button type="button" class="cc-sheet-option" @onclick="() => { projectActionsOpen = false; editingProject = true; }">Edit details</button>
+                @if (project.ArchivedAt is null)
+                {
+                    <button type="button" class="cc-sheet-option" @onclick="() => ArchiveAsync(project)">Archive</button>
+                }
+            </div>
+        </Modal>
+    }
+
+    @if (subtaskActionsFor is { } target)
+    {
+        <Modal Title="@target.Title" Size="small" CloseOnBackdrop="true" OnClose="() => subtaskActionsFor = null">
+            <div class="cc-sheet">
+                <p class="cc-sheet-label">Move to</p>
+                @foreach (var status in SubtaskColumns.Where(s => s != target.Status))
+                {
+                    <button type="button" class="cc-sheet-option status-@status.ToString().ToLowerInvariant()" @onclick="() => MoveSubtaskFromSheetAsync(target, status)">
+                        @ProjectMath.DisplayName(status)
+                    </button>
+                }
+                <p class="cc-sheet-label">Subtask</p>
+                <button type="button" class="cc-sheet-option" @onclick="() => { subtaskActionsFor = null; OpenSubtask(target); }">Edit details</button>
+                <button type="button" class="cc-sheet-option is-danger" @onclick="() => { subtaskActionsFor = null; deleteSubtask = target; }">Delete</button>
+            </div>
+        </Modal>
+    }
+
+    @if (subtaskEditorOpen)
+    {
+        <SubtaskEditor Subtask="editingSubtask" ProjectId="project.Id" InitialStatus="newSubtaskStatus"
+                       OnSaved="OnSubtaskSavedAsync" OnClose="() => subtaskEditorOpen = false"
+                       OnDelete="s => { subtaskEditorOpen = false; deleteSubtask = s; }" />
+    }
+
+    @if (pendingBlock is not null)
+    {
+        <ReasonPrompt Title="Mark as blocked" Label="What's it blocked on?" Placeholder="e.g. RFI submitted to management"
+                      ConfirmText="Mark blocked" OnConfirm="ConfirmBlockAsync" OnCancel="() => pendingBlock = null" />
+    }
+
+    @if (pendingHold)
+    {
+        <ReasonPrompt Title="Put on hold" Label="What's it waiting on?" Placeholder="e.g. Waiting on budget approval"
+                      ConfirmText="Put on hold" OnConfirm="ConfirmHoldAsync" OnCancel="() => pendingHold = false" />
+    }
+
+    @if (deleteSubtask is { } doomed)
+    {
+        <Modal Title="Delete subtask?" Size="small" OnClose="() => deleteSubtask = null">
+            <ChildContent>
+                <p class="confirm-text"><strong>@doomed.Title</strong> and its notes and links will be deleted. This can't be undone.</p>
+            </ChildContent>
+            <Footer>
+                <span class="cc-spacer"></span>
+                <button type="button" class="cc-btn cc-btn-ghost" @onclick="() => deleteSubtask = null">Cancel</button>
+                <button type="button" class="cc-btn cc-btn-danger" @onclick="() => DeleteSubtaskAsync(doomed)">Delete</button>
+            </Footer>
+        </Modal>
+    }
+}
+
+@code {
+    private static readonly IReadOnlyList<SubtaskStatus> SubtaskColumns = Enum.GetValues<SubtaskStatus>();
+
+    [Parameter] public int Id { get; set; }
+
+    private Project? project;
+    private bool notFound;
+    private bool loadFailed;
+    private DateOnly today;
+    private string? notice;
+
+    private bool editingProject;
+    private bool projectActionsOpen;
+    private bool pendingHold;
+    private ProjectStatus pendingProjectStatus;
+
+    private Subtask? subtaskActionsFor;
+    private bool subtaskEditorOpen;
+    private Subtask? editingSubtask;
+    private SubtaskStatus newSubtaskStatus;
+    private (int Id, int Index)? pendingBlock;
+    private Subtask? deleteSubtask;
+
+    private IReadOnlyList<Link> ProjectLinks => project!.Links.Where(l => l.SubtaskId is null).ToList();
+
+    private IReadOnlyDictionary<int, string> SubtaskTitles => project!.Subtasks.ToDictionary(s => s.Id, s => s.Title);
+
+    private static string StatusClass(SubtaskStatus status) => $"status-{status.ToString().ToLowerInvariant()}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (project?.Id != Id)
+        {
+            project = null;
+            notFound = false;
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            today = Projects.Today;
+            var loaded = await Projects.GetProjectAsync(Id);
+            notFound = loaded is null;
+            project = loaded;
+            loadFailed = false;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't load project {ProjectId}", Id);
+            loadFailed = true;
+        }
+    }
+
+    private async Task OnProjectSavedAsync(Project saved)
+    {
+        editingProject = false;
+        await LoadAsync();
+    }
+
+    private Task RequestProjectMove(ProjectStatus status)
+    {
+        projectActionsOpen = false;
+        if (status == ProjectStatus.OnHold)
+        {
+            pendingProjectStatus = status;
+            pendingHold = true;
+            return Task.CompletedTask;
+        }
+
+        return MoveProjectAsync(status, null);
+    }
+
+    private Task ConfirmHoldAsync(string? reason)
+    {
+        pendingHold = false;
+        return MoveProjectAsync(pendingProjectStatus, reason);
+    }
+
+    private async Task MoveProjectAsync(ProjectStatus status, string? reason)
+    {
+        try
+        {
+            // To the bottom of the target column on the projects board.
+            await Projects.MoveProjectAsync(project!.Id, status, int.MaxValue, reason);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't move project {ProjectId}", Id);
+            notice = "Couldn't change the project's status.";
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task ArchiveAsync(Project target)
+    {
+        editingProject = false;
+        projectActionsOpen = false;
+        try
+        {
+            await Projects.ArchiveProjectAsync(target.Id);
+            Navigation.NavigateTo("projects");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't archive project {ProjectId}", target.Id);
+            notice = "Couldn't archive the project.";
+        }
+    }
+
+    private void OpenNewSubtask(SubtaskStatus status)
+    {
+        editingSubtask = null;
+        newSubtaskStatus = status;
+        subtaskEditorOpen = true;
+    }
+
+    private void OpenSubtask(Subtask subtask)
+    {
+        editingSubtask = subtask;
+        subtaskEditorOpen = true;
+    }
+
+    private async Task OnSubtaskSavedAsync(Subtask saved)
+    {
+        subtaskEditorOpen = false;
+        await LoadAsync();
+    }
+
+    private Task OnSubtaskDropAsync(BoardMove<SubtaskStatus> move) => RequestSubtaskMoveAsync(move.Id, move.Column, move.Index);
+
+    private Task MoveSubtaskFromSheetAsync(Subtask subtask, SubtaskStatus status)
+    {
+        subtaskActionsFor = null;
+        return RequestSubtaskMoveAsync(subtask.Id, status, int.MaxValue);
+    }
+
+    /// <summary>Moving onto Blocked asks for a reason first; everything else moves right away.</summary>
+    private Task RequestSubtaskMoveAsync(int id, SubtaskStatus status, int index)
+    {
+        var subtask = project?.Subtasks.FirstOrDefault(s => s.Id == id);
+        if (subtask is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (status == SubtaskStatus.Blocked && subtask.Status != SubtaskStatus.Blocked)
+        {
+            pendingBlock = (id, index);
+            return Task.CompletedTask;
+        }
+
+        return MoveSubtaskAsync(subtask, status, index, null);
+    }
+
+    private async Task ConfirmBlockAsync(string? reason)
+    {
+        if (pendingBlock is not { } block)
+        {
+            return;
+        }
+
+        pendingBlock = null;
+        var subtask = project?.Subtasks.FirstOrDefault(s => s.Id == block.Id);
+        if (subtask is not null)
+        {
+            await MoveSubtaskAsync(subtask, SubtaskStatus.Blocked, block.Index, reason);
+        }
+    }
+
+    private async Task MoveSubtaskAsync(Subtask subtask, SubtaskStatus status, int index, string? reason)
+    {
+        // Show the move right away; the reload below replaces this with what was saved.
+        var column = project!.Subtasks.Where(s => s.Status == status && s.Id != subtask.Id).ToList();
+        var ordered = ProjectMath.Reorder(column, subtask, index);
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            ordered[i].SortOrder = i;
+        }
+        if (subtask.Status != status)
+        {
+            subtask.BlockedReason = status == SubtaskStatus.Blocked ? ProjectMath.Clean(reason) : null;
+        }
+        subtask.Status = status;
+        project.Subtasks = project.Subtasks.OrderBy(s => s.SortOrder).ThenBy(s => s.Id).ToList();
+
+        try
+        {
+            await Projects.MoveSubtaskAsync(subtask.Id, status, index, reason);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't move subtask {SubtaskId}", subtask.Id);
+            notice = "Couldn't move that subtask. The board has been refreshed.";
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task DeleteSubtaskAsync(Subtask subtask)
+    {
+        deleteSubtask = null;
+        try
+        {
+            await Projects.DeleteSubtaskAsync(subtask.Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't delete subtask {SubtaskId}", subtask.Id);
+            notice = "Couldn't delete that subtask.";
+        }
+
+        await LoadAsync();
+    }
+}

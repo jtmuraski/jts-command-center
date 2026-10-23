@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\JtsCommandCenter.Core\JtsCommandCenter.Core.csproj" />
     <ProjectReference Include="..\..\src\JtsCommandCenter.Infrastructure\JtsCommandCenter.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\JtsCommandCenter.Web\JtsCommandCenter.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -17,6 +17,9 @@ internal sealed class ProjectService(
 
     public DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(time.GetUtcNow(), zone).DateTime);
 
+    public DateTime ToLocalTime(DateTime utc) =>
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), zone);
+
     public async Task<IReadOnlyList<Project>> GetProjectsAsync(bool archived = false, CancellationToken cancellationToken = default)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);

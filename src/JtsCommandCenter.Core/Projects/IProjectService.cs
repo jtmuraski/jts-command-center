@@ -28,6 +28,9 @@ public interface IProjectService
     /// <summary>Today's date in the configured time zone, for due dates and overdue checks.</summary>
     DateOnly Today { get; }
 
+    /// <summary>A stored UTC timestamp (created, completed, note times) in the configured time zone.</summary>
+    DateTime ToLocalTime(DateTime utc);
+
     /// <summary>Projects for the board (or the archive), each with its subtasks for progress, in column order.</summary>
     Task<IReadOnlyList<Project>> GetProjectsAsync(bool archived = false, CancellationToken cancellationToken = default);
 
