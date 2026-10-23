@@ -50,6 +50,39 @@ public static class ProjectMath
         return ordered;
     }
 
+    /// <summary>
+    /// Converts a drop position among the <paramref name="visible"/> cards of a filtered column into a
+    /// position in the <paramref name="full"/> column, placing the card just before the visible card it
+    /// landed on (or just after the last visible card). Neither list may contain the moved card.
+    /// </summary>
+    public static int MapIndex<T>(IReadOnlyList<T> full, IReadOnlyList<T> visible, int visibleIndex)
+    {
+        if (visible.Count == 0)
+        {
+            return full.Count;
+        }
+
+        if (visibleIndex < visible.Count)
+        {
+            return Math.Max(0, IndexOf(full, visible[Math.Max(0, visibleIndex)]));
+        }
+
+        return IndexOf(full, visible[^1]) + 1;
+    }
+
+    private static int IndexOf<T>(IReadOnlyList<T> list, T item)
+    {
+        for (var i = 0; i < list.Count; i++)
+        {
+            if (EqualityComparer<T>.Default.Equals(list[i], item))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
     /// <summary>Problems with a title and date range, empty when valid.</summary>
     public static IReadOnlyList<string> Validate(string? title, DateOnly? startDate, DateOnly? dueDate)
     {

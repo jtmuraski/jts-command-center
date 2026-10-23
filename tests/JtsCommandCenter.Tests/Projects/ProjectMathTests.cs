@@ -54,6 +54,22 @@ public class ProjectMathTests
     public void Reorder_InsertsAtClampedIndex(int index, string expected) =>
         Assert.Equal(expected, string.Join(",", ProjectMath.Reorder(["a", "b", "c"], "x", index)));
 
+    // Full column a..e; the filter shows only b and d.
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(1, 3)]
+    [InlineData(2, 4)]
+    public void MapIndex_PlacesTheCardRelativeToVisibleNeighbors(int visibleIndex, int expected) =>
+        Assert.Equal(expected, ProjectMath.MapIndex(["a", "b", "c", "d", "e"], ["b", "d"], visibleIndex));
+
+    [Fact]
+    public void MapIndex_NothingVisible_GoesToTheEnd() =>
+        Assert.Equal(3, ProjectMath.MapIndex(["a", "b", "c"], [], 0));
+
+    [Fact]
+    public void MapIndex_Unfiltered_IsTheSameIndex() =>
+        Assert.Equal(2, ProjectMath.MapIndex(["a", "b", "c"], ["a", "b", "c"], 2));
+
     [Fact]
     public void Validate_AcceptsTitleAndOrderedDates() =>
         Assert.Empty(ProjectMath.Validate("Workflow update", Today, Today.AddDays(30)));

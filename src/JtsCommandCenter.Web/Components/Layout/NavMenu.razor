@@ -11,6 +11,14 @@
         Dashboard
     </NavLink>
 
+    <div class="nav-section">Work &amp; Life</div>
+    <NavLink class="nav-link" href="projects" @onclick="OnNavigate">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v7h-4z" />
+        </svg>
+        Projects
+    </NavLink>
+
     <button class="nav-section nav-group-toggle @(SportsActive && !sportsExpanded ? "has-active" : "")" type="button"
             aria-expanded="@(sportsExpanded ? "true" : "false")" aria-controls="nav-sports" @onclick="ToggleSportsAsync">
         Sports Center

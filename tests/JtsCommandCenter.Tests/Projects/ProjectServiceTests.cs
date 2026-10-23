@@ -295,6 +295,9 @@ public sealed class ProjectServiceTests : IDisposable
     }
 
     [Fact]
+    public void Today_IsInTheConfiguredTimeZone() => Assert.Equal(ChicagoToday, service.Today);
+
+    [Fact]
     public async Task GetDueSubtasks_UsesTheConfiguredTimeZonesToday()
     {
         var project = await NewProject();

@@ -37,6 +37,15 @@
     --cc-danger: #a05a5a;
     --cc-info: #5f7f9e;
 
+    /* Work / Personal areas (projects, to-dos) */
+    --cc-work: var(--cc-accent);
+    --cc-work-soft: rgba(111, 148, 147, 0.14);
+    --cc-personal: var(--cc-accent-2);
+    --cc-personal-soft: rgba(168, 145, 107, 0.14);
+
+    /* Dims the page behind a dialog. */
+    --cc-overlay: rgba(6, 9, 13, 0.68);
+
     /* Shape & type */
     --cc-radius-sm: 4px;
     --cc-radius: 8px;
@@ -188,6 +197,22 @@ code, pre {
     .cc-btn-ghost:hover {
         background: var(--cc-surface-raised);
     }
+
+.cc-btn-danger {
+    background: transparent;
+    border-color: var(--cc-danger);
+    color: var(--cc-text);
+}
+
+    .cc-btn-danger:hover {
+        background: var(--cc-danger);
+    }
+
+.cc-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+    pointer-events: none;
+}
 
 input, select, textarea {
     font: inherit;

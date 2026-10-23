@@ -15,6 +15,8 @@ internal sealed class ProjectService(
 
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
+    public DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(time.GetUtcNow(), zone).DateTime);
+
     public async Task<IReadOnlyList<Project>> GetProjectsAsync(bool archived = false, CancellationToken cancellationToken = default)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
@@ -255,7 +257,7 @@ internal sealed class ProjectService(
 
     public async Task<IReadOnlyList<Subtask>> GetDueSubtasksAsync(CancellationToken cancellationToken = default)
     {
-        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(time.GetUtcNow(), zone).DateTime);
+        var today = Today;
 
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
         return await db.Subtasks.AsNoTracking()

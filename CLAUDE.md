@@ -37,11 +37,13 @@ src/
       App.razor                  HTML shell, head, scripts
       Routes.razor               Router
       Layout/                    MainLayout (sidebar + topbar shell), NavMenu, ReconnectModal
-      Pages/                     Routable pages (Home = dashboard; Sports/ = Sports Center pages)
+      Pages/                     Routable pages (Home = dashboard; Sports/ = Sports Center pages; Projects/ = projects board)
       SportsCenter/              Sports Center components (ScoreboardCard, NewsList, GameDetailView, WinProbabilityChart)
+      Projects/                  Project components (ProjectCard, ProjectEditor dialog, DateText)
       Dashboard/                 Dashboard cards (Weather, Todo, Projects, Sports, News)
-      Shared/                    Reusable components (DashboardCard wrapper, WeatherIcon)
+      Shared/                    Reusable components (DashboardCard wrapper, WeatherIcon, KanbanBoard, Modal)
     wwwroot/app.css              Global theme: color tokens + base styles
+    wwwroot/lib/sortablejs/      Vendored SortableJS 1.15.6 (MIT), used by KanbanBoard for drag and drop
 tests/
   JtsCommandCenter.Tests/        xUnit tests for Core logic and Infrastructure services
     Support/                     FakeHttpHandler (canned HTTP responses), TestDatabase (in-memory SQLite), ESPN JSON fixtures
@@ -79,6 +81,10 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 - Layout must stay responsive: below 900px the sidebar becomes an off-canvas drawer toggled from the top bar.
 - Dashboard (`Pages/Home.razor`) uses CSS grid areas: 1 column on phones (to-do first), 2 columns from 720px, 3 columns from 1200px. New cards wrap their content in `<DashboardCard Title="...">` and get a grid area in `Home.razor.css`.
 - Dashboard cards other than Weather and Sports still use hard-coded placeholder data in their `@code` blocks. When wiring real data, add the interface and models to Core, the implementation to Infrastructure, and inject the interface (Weather is the reference pattern).
+- **Boards:** `Shared/KanbanBoard<TItem, TColumn>` renders fixed enum columns and handles drag and drop through SortableJS (pointer events, so mouse, pen and touch behave the same; on touch, a short press picks a card up so swipes still scroll).
+  - The drag script never leaves its DOM changes in place: on drop it puts the card back and raises `OnMove`, and the parent updates its data and re-renders. Keep each column list free of anything but card elements, because the script indexes its child nodes.
+  - Give every card a non-drag way to move (the "···" actions sheet) for keyboard use and in case scripts fail. Mark buttons inside a card `data-no-drag`.
+- **Dialogs:** use `Shared/Modal` (render it only while open). It is full screen on phones. Forms leave `CloseOnBackdrop` off.
 - New sections get a link in `Components/Layout/NavMenu.razor` (group under a `nav-section` heading). Groups that hold several pages (like Sports Center) use the collapsible `nav-group-toggle` pattern: open/closed is remembered in `localStorage`, and the group opens itself when you arrive at one of its pages from elsewhere.
 
 ## Integrations
@@ -126,5 +132,5 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 
 <!-- TODO: Fill in as decisions are made. -->
 - Authentication (likely Microsoft Entra ID, single user) — required before deploying publicly
-- Project management UI: Phase 1 (data layer) is done. Still to build: the projects board (`/projects`), the project page with its subtask board and work log, the subtask side panel, image attachments in Markdown descriptions (Azure Blob Storage behind an `IAttachmentStore`, private container served through the app), and wiring the dashboard Projects and Due Today cards to `IProjectService`
+- Project management UI: Phase 1 (data layer) and Phase 2 (the `/projects` board with drag and drop, the editor dialog, Work/Personal filter, and archive) are done. Clicking a card currently opens the editor; once the project page exists it should open that instead. Still to build: the project page with its subtask board and work log, the subtask side panel, image attachments in Markdown descriptions (Azure Blob Storage behind an `IAttachmentStore`, private container served through the app), and wiring the dashboard Projects and Due Today cards to `IProjectService`
 - Azure deployment pipeline (GitHub Actions to App Service)
