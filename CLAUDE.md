@@ -25,10 +25,13 @@ src/
   JtsCommandCenter.Core/         Domain models, service interfaces, options classes, pure logic (no I/O, no packages)
     Weather/                     IWeatherService, WeatherReport, WeatherOptions, WeatherCondition
     Sports/                      ISportsService, IScoreboardService, ISportsNewsService, models, options, ScheduleMath
+    Projects/                    IProjectService, Project/Subtask/Note/Link entities, inputs, ProjectMath
   JtsCommandCenter.Infrastructure/  Implementations that call external services, plus DI registration
-    ServiceCollectionExtensions.cs  AddWeather / AddSports (typed HttpClients, options binding, memory cache)
+    ServiceCollectionExtensions.cs  AddWeather / AddSports / AddProjects, MigrateDatabaseAsync
+    Data/                        CommandCenterDbContext (EF Core), design-time factory, Migrations/
     Weather/                     OpenMeteoWeatherService, WMO code mapping
     Sports/                      ESPN schedule/scoreboard services, RSS/Atom news service, EspnJson helpers
+    Projects/                    ProjectService (EF Core)
   JtsCommandCenter.Web/          Blazor Web App (UI + startup only)
     Components/
       App.razor                  HTML shell, head, scripts
@@ -41,7 +44,7 @@ src/
     wwwroot/app.css              Global theme: color tokens + base styles
 tests/
   JtsCommandCenter.Tests/        xUnit tests for Core logic and Infrastructure services
-    Support/                     FakeHttpHandler (canned HTTP responses) and ESPN JSON fixtures
+    Support/                     FakeHttpHandler (canned HTTP responses), TestDatabase (in-memory SQLite), ESPN JSON fixtures
 ```
 
 Dependencies point inward: Web → Infrastructure → Core, and Web → Core. Core references nothing.
@@ -55,6 +58,10 @@ dotnet build
 dotnet test
 dotnet watch --project src/JtsCommandCenter.Web
 dotnet run --project src/JtsCommandCenter.Web
+
+# EF Core (dotnet-ef is a local tool: run `dotnet tool restore` once)
+dotnet ef migrations add <Name> --project src/JtsCommandCenter.Infrastructure --output-dir Data/Migrations
+dotnet ef database update --project src/JtsCommandCenter.Infrastructure
 ```
 
 Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:7212
@@ -88,20 +95,36 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 
   Timeouts and period breaks carry a down-and-distance in ESPN's data but aren't snaps, so they get no down or yardage. A turnover's `statYardage` is the return, so it isn't shown as a gain. Final games are cached for `CompletedWeekCacheMinutes`, and live games refresh every minute.
 
+## Database and projects
+
+- **Storage:** EF Core on SQL Server. Development uses LocalDB (`ConnectionStrings:CommandCenter` in `appsettings.Development.json`), and the app applies pending migrations on startup in Development only. Production is Azure SQL: the connection string comes from App Service configuration (Managed Identity, no password), and migrations are applied by the deployment pipeline. `EnableRetryOnFailure` covers transient errors, including a serverless database waking up.
+- **DbContext usage:** `CommandCenterDbContext` is `internal`. Services take `IDbContextFactory<CommandCenterDbContext>` and create one short-lived context per operation, because a Blazor circuit is long-lived and a context isn't thread-safe. Reads use `AsNoTracking`.
+- **Model:** a `Project` (Work/Personal `Area`) has `Subtask`s (two levels only), plus `Note`s and `Link`s. Notes and links always carry `ProjectId`, and also `SubtaskId` when they belong to a subtask, so the project's work log includes its subtasks' notes. Enums are stored as strings, and `DateTime`s are UTC.
+- **Boards:**
+  - Columns are fixed: `ProjectStatus` (Planned / Active / On Hold / Done) and `SubtaskStatus` (To Do / In Progress / Blocked / Done).
+  - `SortOrder` is a card's position within its column. Moves renumber the target column.
+  - A status change logs an Activity note, sets or clears `CompletedAt`, and keeps `BlockedReason` only while On Hold (projects) or Blocked (subtasks).
+- **Concurrency:** `Version` is a `Guid` concurrency token, replaced on every edit. Edits pass the version they started from, and a stale one throws `ConcurrencyConflictException`. Moves don't change the version.
+- **Deletes:**
+  - Projects are archived first, and only archived projects can be deleted.
+  - SQL Server allows only one cascade path to Notes/Links. Subtask → Note/Link is therefore `ClientCascade`, and the service loads those rows before removing a subtask or project.
+- **"Today"** for due dates comes from `Projects:TimeZone`, not server time.
+- **Changing the model:** add a migration (see Common commands). The test `Migrations_MatchTheModel` fails if you forget.
+
 ## Code conventions
 
 - Nullable reference types and implicit usings are enabled (set once in `Directory.Build.props`).
 - Keep pages thin: components inject Core interfaces (`IWeatherService`, `ISportsService`, ...), never Infrastructure classes.
 - Where new code goes:
   - Models, interfaces, options classes and pure logic go in **Core**. Core takes no package or framework dependencies.
-  - Anything that does I/O (HTTP APIs, feeds, and later the database/EF Core) goes in **Infrastructure**. It is registered through an `Add<Feature>(IConfiguration)` extension in `ServiceCollectionExtensions.cs`, which `Program.cs` calls.
+  - Anything that does I/O (HTTP APIs, feeds, the database/EF Core) goes in **Infrastructure**. It is registered through an `Add<Feature>(IConfiguration)` extension in `ServiceCollectionExtensions.cs`, which `Program.cs` calls.
   - UI goes in **Web**.
 - Infrastructure classes that are only used internally can be `internal`; `InternalsVisibleTo` exposes them to the test project.
-- Tests: every Core logic class and Infrastructure service gets tests. Services are tested against canned responses via `FakeHttpHandler`, so tests never hit the network. Use `MemoryCache`, `Options.Create`, and `NullLogger<T>.Instance` for the other dependencies.
+- Tests: every Core logic class and Infrastructure service gets tests. Services are tested against canned responses via `FakeHttpHandler`, so tests never hit the network. Use `MemoryCache`, `Options.Create`, and `NullLogger<T>.Instance` for the other dependencies. Database services are tested against `TestDatabase` (in-memory SQLite built from the real model) with a `FakeTimeProvider`.
 
 ## Open decisions / roadmap
 
 <!-- TODO: Fill in as decisions are made. -->
 - Authentication (likely Microsoft Entra ID, single user) — required before deploying publicly
-- Data storage (e.g. Azure SQL, Cosmos DB, or SQLite + EF Core)
+- Project management UI: Phase 1 (data layer) is done. Still to build: the projects board (`/projects`), the project page with its subtask board and work log, the subtask side panel, image attachments in Markdown descriptions (Azure Blob Storage behind an `IAttachmentStore`, private container served through the app), and wiring the dashboard Projects and Due Today cards to `IProjectService`
 - Azure deployment pipeline (GitHub Actions to App Service)

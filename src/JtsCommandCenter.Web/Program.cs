@@ -9,8 +9,15 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddWeather(builder.Configuration);
 builder.Services.AddSports(builder.Configuration);
+builder.Services.AddProjects(builder.Configuration);
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    // Keeps the LocalDB schema current. Deployed environments are migrated by the pipeline.
+    await app.Services.MigrateDatabaseAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
