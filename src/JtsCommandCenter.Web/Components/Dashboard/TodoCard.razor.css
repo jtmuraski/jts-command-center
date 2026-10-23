@@ -9,22 +9,25 @@
 
     .todos li {
         display: flex;
-        padding: 0.6rem 0.75rem;
+        align-items: center;
+        gap: 0.15rem;
+        padding: 0.25rem 0.75rem 0.25rem 0.25rem;
         background: var(--cc-surface-raised);
         border: 1px solid var(--cc-border-subtle);
         border-radius: var(--cc-radius);
     }
 
-label {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
+/* The checkbox's tap area: bigger than the box it draws. */
+.check-hit {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
     cursor: pointer;
 }
 
-    label input {
+    .check-hit input {
         position: absolute;
         opacity: 0;
         pointer-events: none;
@@ -33,7 +36,6 @@ label {
 .check {
     width: 18px;
     height: 18px;
-    flex-shrink: 0;
     border: 1.5px solid var(--cc-text-faint);
     border-radius: 5px;
     display: grid;
@@ -41,12 +43,16 @@ label {
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-label input:checked + .check {
+.check-hit:hover .check {
+    border-color: var(--cc-text-muted);
+}
+
+.check-hit input:checked + .check {
     background: var(--cc-success);
     border-color: var(--cc-success);
 }
 
-    label input:checked + .check::after {
+    .check-hit input:checked + .check::after {
         content: "";
         width: 5px;
         height: 9px;
@@ -55,26 +61,42 @@ label input:checked + .check {
         transform: translateY(-1px) rotate(45deg);
     }
 
-label input:focus-visible + .check {
+.check-hit input:focus-visible + .check {
     outline: 2px solid var(--cc-accent);
     outline-offset: 2px;
 }
 
+.check-hit input:disabled + .check {
+    opacity: 0.5;
+}
+
 .text {
+    flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
+    padding: 0.35rem 0;
 }
 
 .title {
     line-height: 1.3;
+    color: var(--cc-text);
+    overflow-wrap: anywhere;
 }
+
+    .title:hover {
+        color: var(--cc-text-strong);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
 
 .meta {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem 0.5rem;
+    font-size: 0.8rem;
 }
 
 .done .title {
@@ -92,24 +114,49 @@ label input:focus-visible + .check {
 }
 
 .tag-work {
-    color: var(--cc-accent);
-    background: rgba(111, 148, 147, 0.14);
+    color: var(--cc-work);
+    background: var(--cc-work-soft);
 }
 
 .tag-personal {
-    color: var(--cc-accent-2);
-    background: rgba(168, 145, 107, 0.14);
+    color: var(--cc-personal);
+    background: var(--cc-personal-soft);
 }
 
-.due {
+.project {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--cc-text-muted);
-    font-size: 0.8rem;
-    font-variant-numeric: tabular-nums;
+}
+
+.due.is-overdue {
+    color: var(--cc-danger);
+    font-weight: 600;
+}
+
+.due.is-blocked {
+    color: var(--cc-danger);
+}
+
+.state {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.error {
+    margin: 0.75rem 0 0;
+    color: var(--cc-danger);
+    font-size: 0.85rem;
 }
 
 .add {
     margin-top: 0.9rem;
     align-self: flex-start;
-    opacity: 0.6;
-    cursor: not-allowed;
+    min-height: 2.5rem;
+}
+
+.no-projects {
+    margin: 0;
 }

@@ -1,53 +1,108 @@
+@implements IDisposable
+@inject IProjectService Projects
+@inject ProjectChangeNotifier ProjectChanges
+@inject ILogger<ProjectsCard> Logger
+
 <DashboardCard Title="Projects">
-    <HeaderContent>@(workProjects.Length + personalProjects.Length) active</HeaderContent>
+    <HeaderContent>@(projects is null ? "" : $"{projects.Count(p => p.Status == ProjectStatus.Active)} active")</HeaderContent>
     <ChildContent>
-        <h3 class="group">Work</h3>
-        <ul class="projects">
-            @foreach (var project in workProjects)
+        @if (projects is null)
+        {
+            <p class="state cc-muted">@(failed ? "Couldn't load projects." : "Loading projects…")</p>
+        }
+        else if (projects.Count == 0)
+        {
+            <p class="state cc-muted">Nothing active. Move a project to Active on the board to see it here.</p>
+        }
+        else
+        {
+            @foreach (var group in projects.GroupBy(p => p.Area).OrderBy(g => g.Key))
             {
-                <li>
-                    <div class="row">
-                        <span class="name">@project.Name</span>
-                        <span class="meta">@project.Percent%</span>
-                    </div>
-                    <div class="bar"><div class="fill work" style="width: @(project.Percent)%"></div></div>
-                </li>
+                var area = group.Key.ToString().ToLowerInvariant();
+                <h3 class="group">@group.Key</h3>
+                <ul class="projects">
+                    @foreach (var project in group.Take(MaxPerArea))
+                    {
+                        var progress = ProjectMath.ProgressOf(project.Subtasks);
+                        var overdue = ProjectMath.IsOverdue(project, today);
+                        <li>
+                            <a href="projects/@project.Id">
+                                <div class="row">
+                                    <span class="name">@project.Title</span>
+                                    <span class="meta @(overdue ? "is-overdue" : "")">@Summary(project, progress, overdue)</span>
+                                </div>
+                                <div class="bar" title="@progress.Done of @progress.Total subtasks done">
+                                    <div class="fill @area @(project.Status == ProjectStatus.OnHold ? "is-held" : "")" style="width: @(progress.Percent)%"></div>
+                                </div>
+                            </a>
+                        </li>
+                    }
+                </ul>
+                @if (group.Count() > MaxPerArea)
+                {
+                    <p class="more cc-muted">+@(group.Count() - MaxPerArea) more on the board</p>
+                }
             }
-        </ul>
+        }
 
-        <h3 class="group">Personal</h3>
-        <ul class="projects">
-            @foreach (var project in personalProjects)
-            {
-                <li>
-                    <div class="row">
-                        <span class="name">@project.Name</span>
-                        <span class="meta">@project.OpenTasks tasks left</span>
-                    </div>
-                    <div class="bar"><div class="fill personal" style="width: @(project.Percent)%"></div></div>
-                </li>
-            }
-        </ul>
-
-        <a class="cc-btn cc-btn-ghost view-all" href="" aria-disabled="true">View project boards</a>
+        <a class="cc-btn cc-btn-ghost view-all" href="projects">View project boards</a>
     </ChildContent>
 </DashboardCard>
 
 @code {
-    // Placeholder data until projects are stored.
-    private readonly Project[] workProjects =
-    [
-        new("Client Website Redesign", 72, 6),
-        new("Database Migration", 58, 9),
-        new("Reporting Cleanup", 35, 14),
-    ];
+    private const int MaxPerArea = 5;
 
-    private readonly Project[] personalProjects =
-    [
-        new("Home Automation", 70, 10),
-        new("Garage Cleanup", 45, 3),
-        new("Ice Fishing Prep", 20, 7),
-    ];
+    /// <summary>Active projects, then on-hold ones, in board order.</summary>
+    private List<Project>? projects;
+    private bool failed;
+    private DateOnly today;
 
-    private sealed record Project(string Name, int Percent, int OpenTasks);
+    protected override async Task OnInitializedAsync()
+    {
+        ProjectChanges.Changed += OnProjectsChanged;
+        await LoadAsync();
+    }
+
+    // A task was checked off or added elsewhere on the dashboard; progress may have moved.
+    private Task OnProjectsChanged() => InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            today = Projects.Today;
+            projects = (await Projects.GetProjectsAsync())
+                .Where(p => p.Status is ProjectStatus.Active or ProjectStatus.OnHold)
+                .OrderBy(p => p.Status)
+                .ThenBy(p => p.SortOrder)
+                .ToList();
+            failed = false;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't load projects for the dashboard");
+            failed = projects is null;
+        }
+    }
+
+    public void Dispose() => ProjectChanges.Changed -= OnProjectsChanged;
+
+    private string Summary(Project project, ProjectProgress progress, bool overdue)
+    {
+        if (project.Status == ProjectStatus.OnHold)
+        {
+            return "On hold";
+        }
+
+        if (overdue)
+        {
+            return $"Overdue · {DateText.Short(project.DueDate!.Value, today)}";
+        }
+
+        return progress.Total == 0 ? "No subtasks" : $"{progress.Total - progress.Done} of {progress.Total} left";
+    }
 }

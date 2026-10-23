@@ -40,7 +40,7 @@ src/
       Layout/                    MainLayout (sidebar + topbar shell), NavMenu, ReconnectModal
       Pages/                     Routable pages (Home = dashboard; Sports/ = Sports Center pages; Projects/ = board and project page)
       SportsCenter/              Sports Center components (ScoreboardCard, NewsList, GameDetailView, WinProbabilityChart)
-      Projects/                  Project components (WorkItemCard, ProjectEditor/SubtaskEditor dialogs, SubtaskPanel, MarkdownEditor, WorkLog, LinkList, DateText)
+      Projects/                  Project components (WorkItemCard, ProjectEditor/SubtaskEditor dialogs, SubtaskPanel, MarkdownEditor, WorkLog, LinkList, DateText, ProjectChangeNotifier)
       Dashboard/                 Dashboard cards (Weather, Todo, Projects, Sports, News)
       Shared/                    Reusable components (DashboardCard, WeatherIcon, KanbanBoard, Modal, SidePanel, ReasonPrompt, Markdown/MarkdownText)
     wwwroot/app.css              Global theme: color tokens + base styles
@@ -85,7 +85,14 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 - Component-specific styles go in a scoped `Component.razor.css` file next to the component. Use `::deep` when styling child components (e.g. `NavLink`).
 - Layout must stay responsive: below 900px the sidebar becomes an off-canvas drawer toggled from the top bar.
 - Dashboard (`Pages/Home.razor`) uses CSS grid areas: 1 column on phones (to-do first), 2 columns from 720px, 3 columns from 1200px. New cards wrap their content in `<DashboardCard Title="...">` and get a grid area in `Home.razor.css`.
-- Dashboard cards other than Weather and Sports still use hard-coded placeholder data in their `@code` blocks. When wiring real data, add the interface and models to Core, the implementation to Infrastructure, and inject the interface (Weather is the reference pattern).
+- Only the News card still uses hard-coded placeholder data (the header badge says so). When wiring real data, add the interface and models to Core, the implementation to Infrastructure, and inject the interface (Weather is the reference pattern).
+- **Projects card:** shows Active, then On Hold, projects grouped by area (up to 5 each), each with progress, and links to the project page.
+- **Due Today card (`TodoCard`):**
+  - **What it lists:** `GetDueSubtasksAsync` (unfinished subtasks due today or overdue).
+  - **Check-off:** moves a subtask to Done and leaves it struck through until the next reload; unchecking moves it back to its previous column.
+  - **"+ Add task":** a quick add that creates a subtask in a chosen open project (remembered in `localStorage`), due today by default.
+  - **Refresh:** reloads every 5 minutes.
+  - **Keeping cards in step:** changes go through the scoped `ProjectChangeNotifier`, so the Projects card reloads. Use the same notifier for any other component that needs to react to project changes on the same page.
 - **Boards:** `Shared/KanbanBoard<TItem, TColumn>` renders fixed enum columns and handles drag and drop through SortableJS (pointer events, so mouse, pen and touch behave the same; on touch, a short press picks a card up so swipes still scroll).
   - The drag script never leaves its DOM changes in place: on drop it puts the card back and raises `OnMove`, and the parent updates its data and re-renders. Keep each column list free of anything but card elements, because the script indexes its child nodes.
   - Give every card a non-drag way to move (the "···" actions sheet) for keyboard use and in case scripts fail. Mark buttons inside a card `data-no-drag`.
@@ -144,11 +151,9 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 
 <!-- TODO: Fill in as decisions are made. -->
 - Authentication (likely Microsoft Entra ID, single user) — required before deploying publicly
-- Project management UI: Phases 1-3 are done.
-  - Done so far: the data layer; the `/projects` board (drag and drop, editor dialog, Work/Personal filter, archive); the project page `/projects/{id}` (header, subtask board, Markdown description, links, work log); and the subtask side panel.
+- Project management: all six planned phases are done (data layer, board, project page, subtask panel, image attachments, dashboard cards).
   - The side panel opens from a subtask card and lives in the query string (`?subtask={id}`, replacing the history entry), so it can be linked to. It has a status switch, dates, description, the subtask's links and its work log. It takes its data from the page's project load, which already includes subtask notes and links.
-  - Image attachments in descriptions are done too.
-  - Still to build: wiring the dashboard Projects and Due Today cards to `IProjectService`
+  - Possible follow-ups: a cross-project subtask view (one row per project), images in work-log notes, and cleanup of images that were removed from the Markdown text.
 - Azure deployment pipeline (GitHub Actions to App Service). Production needs:
   - a storage account with the App Service's managed identity granted *Storage Blob Data Contributor*
   - `Attachments:Provider=AzureBlob` and `Attachments:BlobServiceUri`

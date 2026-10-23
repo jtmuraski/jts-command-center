@@ -12,6 +12,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddWeather(builder.Configuration);
 builder.Services.AddSports(builder.Configuration);
 builder.Services.AddProjects(builder.Configuration);
+builder.Services.AddScoped<JtsCommandCenter.Web.Components.Projects.ProjectChangeNotifier>();
 
 // A relative local attachments folder lives under the app, not wherever the process was started from.
 builder.Services.PostConfigure<AttachmentOptions>(options =>
