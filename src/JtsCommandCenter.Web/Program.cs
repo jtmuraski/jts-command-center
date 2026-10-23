@@ -23,7 +23,7 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    // Keeps the LocalDB schema current. Deployed environments are migrated by the pipeline.
+    // Keeps the local development schema current. Deployed environments are migrated by the pipeline.
     await app.Services.MigrateDatabaseAsync();
 }
 

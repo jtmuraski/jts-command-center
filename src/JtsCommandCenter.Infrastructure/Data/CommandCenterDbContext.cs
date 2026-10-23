@@ -5,7 +5,7 @@ using JtsCommandCenter.Core.Projects;
 namespace JtsCommandCenter.Infrastructure.Data;
 
 /// <summary>
-/// The app's database: SQL Server LocalDB in development, Azure SQL in production. Create a short-lived
+/// The app's database: SQL Server Express in development, Azure SQL in production. Create a short-lived
 /// instance per operation through <see cref="IDbContextFactory{TContext}"/>, since a Blazor circuit
 /// outlives any single unit of work.
 /// </summary>

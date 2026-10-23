@@ -94,7 +94,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Projects, subtasks, and notes in SQL Server (LocalDB in development, Azure SQL in production),
+    /// Projects, subtasks, and notes in SQL Server (SQL Express in development, Azure SQL in production),
     /// using the "CommandCenter" connection string and the "Projects" section; image attachments in a
     /// local folder or Azure Blob Storage, per the "Attachments" section.
     /// </summary>
