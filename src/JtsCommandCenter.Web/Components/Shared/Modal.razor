@@ -1,0 +1,52 @@
+@* A centered dialog over a dimmed page (full screen on phones). Render it only while it's open. *@
+<div class="modal-layer" @onkeydown="OnKeyDown">
+    <div class="modal-backdrop" @onclick="OnBackdropClick"></div>
+    <div class="modal modal-@Size" role="dialog" aria-modal="true" aria-labelledby="@titleId" tabindex="-1" @ref="dialog">
+        <header class="modal-header">
+            <h2 id="@titleId">@Title</h2>
+            <button type="button" class="modal-close" aria-label="Close" @onclick="() => OnClose.InvokeAsync()">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+        </header>
+        <div class="modal-body">
+            @ChildContent
+        </div>
+        @if (Footer is not null)
+        {
+            <footer class="modal-footer">@Footer</footer>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+
+    /// <summary>Raised by the close button, Escape, and (when allowed) a click outside.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>Forms leave this off so a stray tap outside doesn't throw away typing.</summary>
+    [Parameter] public bool CloseOnBackdrop { get; set; }
+
+    /// <summary>"small" for prompts and menus, "medium" for forms.</summary>
+    [Parameter] public string Size { get; set; } = "medium";
+
+    /// <summary>Focuses the dialog on open, unless the content focuses something itself.</summary>
+    [Parameter] public bool AutoFocus { get; set; } = true;
+
+    private readonly string titleId = $"modal-{Guid.NewGuid():N}";
+    private ElementReference dialog;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && AutoFocus)
+        {
+            await dialog.FocusAsync();
+        }
+    }
+
+    private Task OnBackdropClick() => CloseOnBackdrop ? OnClose.InvokeAsync() : Task.CompletedTask;
+
+    private Task OnKeyDown(KeyboardEventArgs e) => e.Key == "Escape" ? OnClose.InvokeAsync() : Task.CompletedTask;
+}

@@ -1,0 +1,117 @@
+@typeparam TItem
+@typeparam TColumn where TColumn : struct, Enum
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* Fixed columns of cards that can be dragged within and between columns (SortableJS, mouse and touch).
+   The board never moves cards itself: a drop raises OnMove, and the parent re-renders from its data. *@
+<div class="board-frame">
+    <div class="board" style="--board-columns: @Columns.Count" @ref="boardElement">
+        @foreach (var column in Columns)
+        {
+            var cards = Items.Where(item => EqualityComparer<TColumn>.Default.Equals(ColumnOf(item), column)).ToList();
+            var title = ColumnTitle(column);
+            <section class="board-column @ColumnClass?.Invoke(column)" aria-label="@title">
+                <header class="column-header">
+                    <h2>@title</h2>
+                    <span class="count" aria-label="@cards.Count cards">@cards.Count</span>
+                    @if (OnAdd.HasDelegate)
+                    {
+                        <button type="button" class="column-add" title="Add to @title" aria-label="Add to @title"
+                                @onclick="() => OnAdd.InvokeAsync(column)">
+                            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                        </button>
+                    }
+                </header>
+                @* Holds only card elements: the drag script indexes its child nodes. *@
+                <div class="column-list @(cards.Count == 0 ? "is-empty" : "")" data-board-list data-column="@column" data-empty="@EmptyText">
+                    @foreach (var item in cards)
+                    {
+                        var id = IdOf(item);
+                        <div class="board-card" data-board-card data-id="@id" @key="id">@CardTemplate(item)</div>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<TColumn> Columns { get; set; } = [];
+
+    /// <summary>All cards, already in display order within each column.</summary>
+    [Parameter, EditorRequired] public IEnumerable<TItem> Items { get; set; } = [];
+
+    [Parameter, EditorRequired] public Func<TItem, TColumn> ColumnOf { get; set; } = default!;
+    [Parameter, EditorRequired] public Func<TItem, int> IdOf { get; set; } = default!;
+    [Parameter, EditorRequired] public Func<TColumn, string> ColumnTitle { get; set; } = default!;
+    [Parameter, EditorRequired] public RenderFragment<TItem> CardTemplate { get; set; } = default!;
+
+    /// <summary>Extra CSS class per column, e.g. for a status color.</summary>
+    [Parameter] public Func<TColumn, string>? ColumnClass { get; set; }
+
+    /// <summary>A card was dropped. The index is its position among the column's cards as shown.</summary>
+    [Parameter] public EventCallback<BoardMove<TColumn>> OnMove { get; set; }
+
+    /// <summary>Shows a "+" button on each column when set.</summary>
+    [Parameter] public EventCallback<TColumn> OnAdd { get; set; }
+
+    [Parameter] public string EmptyText { get; set; } = "Nothing here";
+
+    private ElementReference boardElement;
+    private DotNetObjectReference<KanbanBoard<TItem, TColumn>>? selfReference;
+    private IJSObjectReference? module;
+    private IJSObjectReference? sortables;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            selfReference = DotNetObjectReference.Create(this);
+            module = await JS.InvokeAsync<IJSObjectReference>("import", $"./{Assets["Components/Shared/KanbanBoard.razor.js"]}");
+            sortables = await module.InvokeAsync<IJSObjectReference>("init", boardElement, selfReference);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit went away while the page was loading.
+        }
+        catch (JSException)
+        {
+            // Dragging is unavailable (script blocked or failed); cards can still be moved from their menus.
+        }
+    }
+
+    [JSInvokable]
+    public Task OnDrop(int id, string column, int index) =>
+        Enum.TryParse<TColumn>(column, out var target)
+            ? OnMove.InvokeAsync(new BoardMove<TColumn>(id, target, index))
+            : Task.CompletedTask;
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (sortables is not null)
+            {
+                await sortables.InvokeVoidAsync("dispose");
+                await sortables.DisposeAsync();
+            }
+
+            if (module is not null)
+            {
+                await module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Nothing to clean up in a browser that's gone.
+        }
+
+        selfReference?.Dispose();
+    }
+}

@@ -1,0 +1,118 @@
+.modal-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--cc-overlay);
+}
+
+.modal {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-height: calc(100dvh - 2rem);
+    background: var(--cc-surface);
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius-lg);
+    box-shadow: var(--cc-shadow);
+}
+
+    .modal:focus {
+        outline: none;
+    }
+
+.modal-medium {
+    max-width: 640px;
+}
+
+.modal-small {
+    max-width: 420px;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1rem 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--cc-border-subtle);
+}
+
+    .modal-header h2 {
+        margin: 0;
+        font-size: 1.1rem;
+        overflow-wrap: anywhere;
+    }
+
+.modal-close {
+    margin-left: auto;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: none;
+    border-radius: var(--cc-radius);
+    background: none;
+    color: var(--cc-text-muted);
+    cursor: pointer;
+}
+
+    .modal-close svg {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+    }
+
+    .modal-close:hover {
+        color: var(--cc-text-strong);
+        background: var(--cc-surface-raised);
+    }
+
+    .modal-close:focus-visible {
+        outline: 2px solid var(--cc-accent);
+    }
+
+.modal-body {
+    padding: 1rem 1.25rem;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.25rem 1rem;
+    border-top: 1px solid var(--cc-border-subtle);
+}
+
+/* Phones: forms take the whole screen. */
+@media (max-width: 600px) {
+    .modal-layer {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .modal-medium {
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+        border: none;
+    }
+
+    .modal-small {
+        align-self: center;
+        margin: 1rem;
+    }
+}

@@ -1,0 +1,203 @@
+@inject IProjectService Projects
+@inject ILogger<WorkLog> Logger
+
+@* A running log of dated notes, newest first, with status changes mixed in as activity lines. *@
+<div class="work-log">
+    <form class="composer" @onsubmit="AddAsync">
+        <label class="sr-only" for="@composerId">Add a note</label>
+        <textarea id="@composerId" rows="3" @bind="draft" @bind:event="oninput" @onkeydown="OnComposerKeyDown"
+                  placeholder="Add a note, e.g. RFI submitted to management. Waiting for clarification."></textarea>
+        <div class="composer-actions">
+            <span class="cc-hint">Markdown works · Ctrl+Enter to add</span>
+            <button type="submit" class="cc-btn" disabled="@(busy || string.IsNullOrWhiteSpace(draft))">Add note</button>
+        </div>
+    </form>
+
+    @if (error is not null)
+    {
+        <p class="error" role="alert">@error</p>
+    }
+
+    @if (Notes.Any(n => n.Kind == NoteKind.Activity))
+    {
+        <label class="activity-toggle">
+            <input type="checkbox" @bind="showActivity" />
+            Show status changes
+        </label>
+    }
+
+    @{
+        var visible = Notes.Where(n => showActivity || n.Kind == NoteKind.Entry).ToList();
+    }
+    @if (visible.Count == 0)
+    {
+        <p class="empty cc-muted">No notes yet.</p>
+    }
+    else
+    {
+        <ol class="entries">
+            @foreach (var note in visible)
+            {
+                var stamp = DateText.Stamp(Projects.ToLocalTime(note.CreatedAt), today);
+                var subtaskTitle = note.SubtaskId is int id && SubtaskTitles?.TryGetValue(id, out var t) == true ? t : null;
+                @if (note.Kind == NoteKind.Activity)
+                {
+                    <li class="activity" @key="note.Id">
+                        <span class="activity-text">@note.Body</span>
+                        @if (subtaskTitle is not null)
+                        {
+                            <span class="cc-chip">@subtaskTitle</span>
+                        }
+                        <time>@stamp</time>
+                    </li>
+                }
+                else
+                {
+                    <li class="entry" @key="note.Id">
+                        <header class="entry-header">
+                            <time>@stamp</time>
+                            @if (note.EditedAt is not null)
+                            {
+                                <span class="edited">edited</span>
+                            }
+                            @if (subtaskTitle is not null)
+                            {
+                                <span class="cc-chip">@subtaskTitle</span>
+                            }
+                            @if (editingId != note.Id)
+                            {
+                                <span class="entry-actions">
+                                    @if (confirmDeleteId == note.Id)
+                                    {
+                                        <button type="button" class="link danger" @onclick="() => DeleteAsync(note)">Delete note</button>
+                                        <button type="button" class="link" @onclick="() => confirmDeleteId = null">Keep</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="link" @onclick="() => StartEdit(note)">Edit</button>
+                                        <button type="button" class="link" @onclick="() => confirmDeleteId = note.Id">Delete</button>
+                                    }
+                                </span>
+                            }
+                        </header>
+                        @if (editingId == note.Id)
+                        {
+                            <form class="edit-form" @onsubmit="() => SaveEditAsync(note)">
+                                <label class="sr-only" for="@($"{composerId}-{note.Id}")">Edit note</label>
+                                <textarea id="@($"{composerId}-{note.Id}")" rows="4" @bind="editText" @bind:event="oninput"></textarea>
+                                <div class="composer-actions">
+                                    <span class="cc-spacer"></span>
+                                    <button type="button" class="cc-btn cc-btn-ghost" @onclick="() => editingId = null">Cancel</button>
+                                    <button type="submit" class="cc-btn" disabled="@(busy || string.IsNullOrWhiteSpace(editText))">Save</button>
+                                </div>
+                            </form>
+                        }
+                        else
+                        {
+                            <Markdown Text="@note.Body" />
+                        }
+                    </li>
+                }
+            }
+        </ol>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public int ProjectId { get; set; }
+
+    /// <summary>When set, new notes go on this subtask instead of the project.</summary>
+    [Parameter] public int? SubtaskId { get; set; }
+
+    /// <summary>Newest first.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<Note> Notes { get; set; } = [];
+
+    /// <summary>Labels notes that belong to a subtask (on the project page).</summary>
+    [Parameter] public IReadOnlyDictionary<int, string>? SubtaskTitles { get; set; }
+
+    /// <summary>A note was added, edited, or deleted; the parent should reload its notes.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private readonly string composerId = $"note-{Guid.NewGuid():N}";
+    private DateOnly today;
+    private string? draft;
+    private bool showActivity = true;
+    private int? editingId;
+    private string? editText;
+    private int? confirmDeleteId;
+    private bool busy;
+    private string? error;
+
+    protected override void OnInitialized() => today = Projects.Today;
+
+    private async Task OnComposerKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && (e.CtrlKey || e.MetaKey))
+        {
+            await AddAsync();
+        }
+    }
+
+    private Task AddAsync() => RunAsync("add the note", async () =>
+    {
+        if (string.IsNullOrWhiteSpace(draft))
+        {
+            return;
+        }
+
+        if (SubtaskId is int subtaskId)
+        {
+            await Projects.AddSubtaskNoteAsync(subtaskId, draft);
+        }
+        else
+        {
+            await Projects.AddProjectNoteAsync(ProjectId, draft);
+        }
+
+        draft = null;
+    });
+
+    private void StartEdit(Note note)
+    {
+        editingId = note.Id;
+        editText = note.Body;
+        confirmDeleteId = null;
+    }
+
+    private Task SaveEditAsync(Note note) => RunAsync("save the note", async () =>
+    {
+        await Projects.UpdateNoteAsync(note.Id, editText ?? "");
+        editingId = null;
+    });
+
+    private Task DeleteAsync(Note note) => RunAsync("delete the note", async () =>
+    {
+        await Projects.DeleteNoteAsync(note.Id);
+        confirmDeleteId = null;
+    });
+
+    private async Task RunAsync(string what, Func<Task> action)
+    {
+        if (busy)
+        {
+            return;
+        }
+
+        busy = true;
+        error = null;
+        try
+        {
+            await action();
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't {Action} on project {ProjectId}", what, ProjectId);
+            error = $"Couldn't {what}. Try again.";
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

@@ -1,0 +1,381 @@
+@page "/projects"
+@inject IProjectService Projects
+@inject NavigationManager Navigation
+@inject ILogger<ProjectsBoard> Logger
+
+<PageTitle>Projects · Command Center</PageTitle>
+
+<header class="page-header">
+    <div class="heading">
+        <h1>@(ShowArchive ? "Archived projects" : "Projects")</h1>
+        <p class="cc-muted">
+            @if (ShowArchive)
+            {
+                @("Restore a project to put it back on the board.")
+            }
+            else
+            {
+                @("Open a project to see its subtasks. Drag a card to change its status, or use its ··· menu.")
+            }
+        </p>
+    </div>
+
+    <div class="toolbar">
+        <nav class="filter" aria-label="Filter by area">
+            <a href="@Href(null, ShowArchive)" class="@(AreaFilter is null ? "active" : "")" aria-current="@(AreaFilter is null ? "page" : null)">All</a>
+            @foreach (var option in Enum.GetValues<WorkArea>())
+            {
+                <a href="@Href(option, ShowArchive)" class="@(AreaFilter == option ? "active" : "")" aria-current="@(AreaFilter == option ? "page" : null)">@option</a>
+            }
+        </nav>
+        @if (ShowArchive)
+        {
+            <a class="cc-btn cc-btn-ghost" href="@Href(AreaFilter, false)">Back to board</a>
+        }
+        else
+        {
+            <a class="cc-btn cc-btn-ghost" href="@Href(AreaFilter, true)">Archive</a>
+            <button type="button" class="cc-btn" @onclick="() => OpenNew(ProjectStatus.Planned)">+ New project</button>
+        }
+    </div>
+</header>
+
+@if (notice is not null)
+{
+    <div class="cc-banner" role="status">
+        <span>@notice.Text</span>
+        @if (notice.UndoArchiveId is int undoId)
+        {
+            <button type="button" class="cc-btn cc-btn-ghost" @onclick="() => RestoreAsync(undoId)">Undo</button>
+        }
+        <button type="button" class="cc-banner-close" aria-label="Dismiss" @onclick="() => notice = null">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+    </div>
+}
+
+@if (projects is null)
+{
+    <p class="state cc-muted">@(loadFailed ? "Couldn't load projects. Try reloading the page." : "Loading projects…")</p>
+}
+else if (ShowArchive)
+{
+    var archived = Visible.ToList();
+    @if (archived.Count == 0)
+    {
+        <p class="state cc-muted">Nothing archived@(AreaFilter is null ? "" : $" in {AreaFilter}").</p>
+    }
+    else
+    {
+        <ul class="archive-list">
+            @foreach (var project in archived)
+            {
+                <li class="archive-item area-@project.Area.ToString().ToLowerInvariant()">
+                    <div class="archive-text">
+                        <span class="archive-title">@project.Title</span>
+                        <span class="archive-meta">
+                            @project.Area · @ProjectMath.DisplayName(project.Status)@(project.Subtasks.Count > 0 ? $" · {project.Subtasks.Count} subtasks" : "")
+                        </span>
+                    </div>
+                    <div class="archive-actions">
+                        <button type="button" class="cc-btn cc-btn-ghost" @onclick="() => RestoreAsync(project.Id)">Restore</button>
+                        <button type="button" class="cc-btn cc-btn-danger" @onclick="() => deleteCandidate = project">Delete</button>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+}
+else
+{
+    <div class="board-area">
+        <KanbanBoard TItem="Project" TColumn="ProjectStatus"
+                     Columns="Columns" Items="Visible" ColumnOf="p => p.Status" IdOf="p => p.Id"
+                     ColumnTitle="ProjectMath.DisplayName" ColumnClass="ColumnClass"
+                     OnMove="OnBoardMoveAsync" OnAdd="OpenNew" EmptyText="Drop a project here">
+            <CardTemplate Context="project">
+                <WorkItemCard Title="@project.Title" Today="today" Done="project.Status == ProjectStatus.Done"
+                              Priority="project.Priority" DueDate="project.DueDate" Area="project.Area"
+                              Reason="@(project.Status == ProjectStatus.OnHold ? project.BlockedReason : null)"
+                              Progress="ProjectMath.ProgressOf(project.Subtasks)"
+                              OnOpen="() => OpenProject(project)" OnActions="() => actionsFor = project" />
+            </CardTemplate>
+        </KanbanBoard>
+    </div>
+}
+
+@if (editorOpen)
+{
+    <ProjectEditor Project="editing" InitialStatus="newStatus" DefaultArea="@(AreaFilter ?? WorkArea.Work)"
+                   OnSaved="OnSavedAsync" OnClose="() => editorOpen = false" OnArchive="ArchiveAsync" />
+}
+
+@if (actionsFor is { } target)
+{
+    <Modal Title="@target.Title" Size="small" CloseOnBackdrop="true" OnClose="() => actionsFor = null">
+        <div class="cc-sheet">
+            <p class="cc-sheet-label">Move to</p>
+            @foreach (var status in Columns.Where(s => s != target.Status))
+            {
+                <button type="button" class="cc-sheet-option status-@status.ToString().ToLowerInvariant()" @onclick="() => MoveFromSheetAsync(target, status)">
+                    @ProjectMath.DisplayName(status)
+                </button>
+            }
+            <p class="cc-sheet-label">Project</p>
+            <button type="button" class="cc-sheet-option" @onclick="() => { actionsFor = null; OpenProject(target); }">Open project</button>
+            <button type="button" class="cc-sheet-option" @onclick="() => { actionsFor = null; OpenEdit(target); }">Edit details</button>
+            <button type="button" class="cc-sheet-option" @onclick="() => ArchiveAsync(target)">Archive</button>
+        </div>
+    </Modal>
+}
+
+@if (pendingHold is not null)
+{
+    <ReasonPrompt Title="Put on hold" Label="What's it waiting on?" Placeholder="e.g. Waiting on budget approval"
+                  ConfirmText="Put on hold" OnConfirm="ConfirmHoldAsync" OnCancel="() => pendingHold = null" />
+}
+
+@if (deleteCandidate is { } doomed)
+{
+    <Modal Title="Delete permanently?" Size="small" OnClose="() => deleteCandidate = null">
+        <ChildContent>
+            <p class="confirm-text">
+                <strong>@doomed.Title</strong>@(doomed.Subtasks.Count > 0 ? $", its {doomed.Subtasks.Count} subtasks," : "")
+                and all of its notes and links will be deleted. This can't be undone.
+            </p>
+        </ChildContent>
+        <Footer>
+            <span class="cc-spacer"></span>
+            <button type="button" class="cc-btn cc-btn-ghost" @onclick="() => deleteCandidate = null">Cancel</button>
+            <button type="button" class="cc-btn cc-btn-danger" @onclick="() => DeleteAsync(doomed)">Delete</button>
+        </Footer>
+    </Modal>
+}
+
+@code {
+    private static readonly IReadOnlyList<ProjectStatus> Columns = Enum.GetValues<ProjectStatus>();
+
+    /// <summary>"work" or "personal"; anything else shows both.</summary>
+    [SupplyParameterFromQuery(Name = "area")] public string? AreaQuery { get; set; }
+
+    /// <summary>"archive" shows archived projects instead of the board.</summary>
+    [SupplyParameterFromQuery(Name = "view")] public string? ViewQuery { get; set; }
+
+    private List<Project>? projects;
+    private bool loadFailed;
+    private bool? loadedArchive;
+    private DateOnly today;
+
+    private bool editorOpen;
+    private Project? editing;
+    private ProjectStatus newStatus;
+
+    private Project? actionsFor;
+    private Project? deleteCandidate;
+
+    private (int Id, int Index)? pendingHold;
+
+    private Notice? notice;
+
+    private sealed record Notice(string Text, int? UndoArchiveId = null);
+
+    private WorkArea? AreaFilter => Enum.TryParse<WorkArea>(AreaQuery, ignoreCase: true, out var area) ? area : null;
+
+    private bool ShowArchive => string.Equals(ViewQuery, "archive", StringComparison.OrdinalIgnoreCase);
+
+    private IEnumerable<Project> Visible => (projects ?? []).Where(Matches);
+
+    private bool Matches(Project project) => AreaFilter is not { } area || project.Area == area;
+
+    private static string Href(WorkArea? area, bool archive)
+    {
+        var query = new List<string>();
+        if (area is { } a)
+        {
+            query.Add($"area={a.ToString().ToLowerInvariant()}");
+        }
+
+        if (archive)
+        {
+            query.Add("view=archive");
+        }
+
+        return query.Count == 0 ? "projects" : $"projects?{string.Join("&", query)}";
+    }
+
+    private static string ColumnClass(ProjectStatus status) => $"status-{status.ToString().ToLowerInvariant()}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedArchive != ShowArchive)
+        {
+            projects = null;
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            today = Projects.Today;
+            projects = (await Projects.GetProjectsAsync(archived: ShowArchive)).ToList();
+            loadedArchive = ShowArchive;
+            loadFailed = false;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't load projects");
+            loadFailed = true;
+        }
+    }
+
+    private void OpenNew(ProjectStatus status)
+    {
+        editing = null;
+        newStatus = status;
+        editorOpen = true;
+    }
+
+    private void OpenProject(Project project) => Navigation.NavigateTo($"projects/{project.Id}");
+
+    private void OpenEdit(Project project)
+    {
+        editing = project;
+        editorOpen = true;
+    }
+
+    private async Task OnSavedAsync(Project saved)
+    {
+        editorOpen = false;
+        await LoadAsync();
+        if (!Matches(saved))
+        {
+            notice = new Notice($"Saved \"{saved.Title}\". It's hidden by the {AreaFilter} filter.");
+        }
+    }
+
+    private Task OnBoardMoveAsync(BoardMove<ProjectStatus> move) => RequestMoveAsync(move.Id, move.Column, move.Index);
+
+    private Task MoveFromSheetAsync(Project project, ProjectStatus status)
+    {
+        actionsFor = null;
+        return RequestMoveAsync(project.Id, status, int.MaxValue);
+    }
+
+    /// <summary>Moving onto On Hold asks for a reason first; everything else moves right away.</summary>
+    private Task RequestMoveAsync(int id, ProjectStatus status, int visibleIndex)
+    {
+        var project = projects?.FirstOrDefault(p => p.Id == id);
+        if (project is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (status == ProjectStatus.OnHold && project.Status != ProjectStatus.OnHold)
+        {
+            pendingHold = (id, visibleIndex);
+            return Task.CompletedTask;
+        }
+
+        return MoveAsync(project, status, visibleIndex, null);
+    }
+
+    private async Task ConfirmHoldAsync(string? holdReason)
+    {
+        if (pendingHold is not { } hold)
+        {
+            return;
+        }
+
+        pendingHold = null;
+        var project = projects?.FirstOrDefault(p => p.Id == hold.Id);
+        if (project is not null)
+        {
+            await MoveAsync(project, ProjectStatus.OnHold, hold.Index, holdReason);
+        }
+    }
+
+    private async Task MoveAsync(Project project, ProjectStatus status, int visibleIndex, string? reason)
+    {
+        // The board shows a filtered column, so translate the drop position into the full column.
+        var column = projects!.Where(p => p.Status == status && p.Id != project.Id).ToList();
+        var index = ProjectMath.MapIndex(column, column.Where(Matches).ToList(), visibleIndex);
+
+        // Show the move right away; the reload below replaces this with what was saved.
+        var ordered = ProjectMath.Reorder(column, project, index);
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            ordered[i].SortOrder = i;
+        }
+        if (project.Status != status)
+        {
+            project.BlockedReason = status == ProjectStatus.OnHold ? ProjectMath.Clean(reason) : null;
+        }
+        project.Status = status;
+        projects = projects!.OrderBy(p => p.SortOrder).ThenBy(p => p.Id).ToList();
+
+        try
+        {
+            await Projects.MoveProjectAsync(project.Id, status, index, reason);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't move project {ProjectId}", project.Id);
+            notice = new Notice("Couldn't move that project. The board has been refreshed.");
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task ArchiveAsync(Project project)
+    {
+        editorOpen = false;
+        actionsFor = null;
+        try
+        {
+            await Projects.ArchiveProjectAsync(project.Id);
+            notice = new Notice($"Archived \"{project.Title}\".", project.Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't archive project {ProjectId}", project.Id);
+            notice = new Notice("Couldn't archive that project.");
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task RestoreAsync(int id)
+    {
+        try
+        {
+            await Projects.RestoreProjectAsync(id);
+            notice = ShowArchive ? new Notice("Restored to the board.") : null;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't restore project {ProjectId}", id);
+            notice = new Notice("Couldn't restore that project.");
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(Project project)
+    {
+        deleteCandidate = null;
+        try
+        {
+            await Projects.DeleteProjectAsync(project.Id);
+            notice = new Notice($"Deleted \"{project.Title}\".");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't delete project {ProjectId}", project.Id);
+            notice = new Notice("Couldn't delete that project.");
+        }
+
+        await LoadAsync();
+    }
+}

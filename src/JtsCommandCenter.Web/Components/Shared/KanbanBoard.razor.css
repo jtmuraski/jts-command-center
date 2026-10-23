@@ -1,0 +1,136 @@
+/* Sized by the space the board actually has (the sidebar takes some on laptops), not the window. */
+.board-frame {
+    container-type: inline-size;
+}
+
+/* Narrow: columns side by side in a horizontal strip that snaps column by column. */
+.board {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(250px, 82%);
+    gap: 0.85rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    padding-bottom: 0.75rem;
+    align-items: start;
+}
+
+@container (min-width: 600px) {
+    .board {
+        grid-auto-columns: minmax(250px, 290px);
+    }
+}
+
+/* Wide enough for four columns: share the width and stop scrolling. */
+@container (min-width: 880px) {
+    .board {
+        grid-auto-flow: row;
+        grid-template-columns: repeat(var(--board-columns, 4), minmax(0, 1fr));
+        overflow-x: visible;
+    }
+}
+
+.board-column {
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--cc-surface);
+    border: 1px solid var(--cc-border-subtle);
+    border-top: 3px solid var(--status-color, var(--cc-border));
+    border-radius: var(--cc-radius-lg);
+    padding: 0.75rem 0.65rem 0.65rem;
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.2rem 0.65rem;
+}
+
+    .column-header h2 {
+        margin: 0;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--cc-text-muted);
+    }
+
+.count {
+    font-size: 0.75rem;
+    color: var(--cc-text-faint);
+    background: var(--cc-surface-raised);
+    border-radius: 999px;
+    padding: 0 0.5rem;
+    line-height: 1.5rem;
+}
+
+.column-add {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem; /* touch target */
+    border: 1px solid transparent;
+    border-radius: var(--cc-radius);
+    background: none;
+    color: var(--cc-text-muted);
+    cursor: pointer;
+}
+
+    .column-add svg {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+    }
+
+    .column-add:hover {
+        color: var(--cc-text-strong);
+        background: var(--cc-surface-raised);
+    }
+
+    .column-add:focus-visible {
+        outline: 2px solid var(--cc-accent);
+        outline-offset: 1px;
+    }
+
+.column-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    min-height: 5rem; /* something to drop onto when empty */
+    border-radius: var(--cc-radius);
+}
+
+    .column-list.is-empty {
+        border: 1px dashed var(--cc-border);
+        justify-content: center;
+    }
+
+        .column-list.is-empty::after {
+            content: attr(data-empty);
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--cc-text-faint);
+        }
+
+.board-card {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+    /* Where the card will land. */
+    .board-card.is-ghost {
+        opacity: 0.35;
+    }
+
+    /* The copy following the pointer. */
+    .board-card.is-dragging {
+        opacity: 0.95;
+        transform: rotate(1.5deg);
+    }

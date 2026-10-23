@@ -1,44 +1,305 @@
+@implements IDisposable
+@inject IProjectService Projects
+@inject ProjectChangeNotifier ProjectChanges
+@inject IJSRuntime JS
+@inject ILogger<TodoCard> Logger
+
 <DashboardCard Title="Due Today">
-    <HeaderContent>@items.Count(i => i.Done) of @items.Count done</HeaderContent>
+    <HeaderContent>@(items is null || items.Count == 0 ? "" : $"{items.Count(i => i.Done)} of {items.Count} done")</HeaderContent>
     <ChildContent>
-        <ul class="todos">
-            @foreach (var item in items.OrderBy(i => i.Done).ThenBy(i => i.Due))
-            {
-                <li class="@(item.Done ? "done" : "")">
-                    <label>
-                        <input type="checkbox" checked="@item.Done" @onchange="() => item.Done = !item.Done" />
-                        <span class="check" aria-hidden="true"></span>
+        @if (items is null)
+        {
+            <p class="state cc-muted">@(failed ? "Couldn't load today's tasks." : "Loading…")</p>
+        }
+        else if (items.Count == 0)
+        {
+            <p class="state cc-muted">Nothing due today or overdue.</p>
+        }
+        else
+        {
+            <ul class="todos">
+                @foreach (var item in items.OrderBy(i => i.Done).ThenBy(i => i.Subtask.DueDate))
+                {
+                    var subtask = item.Subtask;
+                    var overdue = !item.Done && subtask.DueDate < today;
+                    <li class="@(item.Done ? "done" : "")" @key="subtask.Id">
+                        <label class="check-hit" title="@(item.Done ? "Mark not done" : "Mark done")">
+                            <input type="checkbox" checked="@item.Done" disabled="@item.Busy" @onchange="() => ToggleAsync(item)"
+                                   aria-label="@($"{subtask.Title}: done")" />
+                            <span class="check" aria-hidden="true"></span>
+                        </label>
                         <span class="text">
-                            <span class="title">@item.Title</span>
+                            <a class="title" href="projects/@subtask.ProjectId?subtask=@subtask.Id">@subtask.Title</a>
                             <span class="meta">
-                                <span class="tag tag-@item.Area.ToLowerInvariant()">@item.Area</span>
-                                <span class="due">@item.Due.ToString("h:mm tt")</span>
+                                <span class="tag tag-@subtask.Project!.Area.ToString().ToLowerInvariant()">@subtask.Project.Area</span>
+                                <span class="project">@subtask.Project.Title</span>
+                                @if (overdue)
+                                {
+                                    <span class="due is-overdue">Overdue · @DateText.Short(subtask.DueDate!.Value, today)</span>
+                                }
+                                else if (subtask.Status == SubtaskStatus.Blocked && !item.Done)
+                                {
+                                    <span class="due is-blocked">Blocked</span>
+                                }
                             </span>
                         </span>
-                    </label>
-                </li>
-            }
-        </ul>
-        <button class="cc-btn cc-btn-ghost add" type="button" disabled title="Coming soon">+ Add task</button>
+                    </li>
+                }
+            </ul>
+        }
+
+        @if (error is not null)
+        {
+            <p class="error" role="alert">@error</p>
+        }
+
+        <button class="cc-btn cc-btn-ghost add" type="button" @onclick="OpenAddAsync">+ Add task</button>
     </ChildContent>
 </DashboardCard>
 
-@code {
-    // Placeholder data until tasks are persisted. Checking items only changes in-memory state.
-    private readonly List<TodoItem> items =
-    [
-        new("Review sprint backlog", "Work", new TimeOnly(9, 0)),
-        new("Send status update to client", "Work", new TimeOnly(11, 30)) { Done = true },
-        new("1:1 with team lead", "Work", new TimeOnly(14, 0)),
-        new("Pick up prescription", "Personal", new TimeOnly(17, 0)),
-        new("Pay electric bill", "Personal", new TimeOnly(20, 0)),
-    ];
+@if (adding)
+{
+    <Modal Title="Add a task" Size="small" AutoFocus="false" OnClose="() => adding = false">
+        <ChildContent>
+            @if (projectChoices.Count == 0)
+            {
+                <p class="cc-muted no-projects">
+                    Tasks live in a project. <a href="projects">Create a project</a> first, for example "Weekend Tasks".
+                </p>
+            }
+            else
+            {
+                <form id="@formId" class="cc-form" @onsubmit="AddAsync">
+                    @if (addError is not null)
+                    {
+                        <ul class="cc-form-errors" role="alert"><li>@addError</li></ul>
+                    }
+                    <label class="cc-field">
+                        <span class="cc-label">Task</span>
+                        <input @ref="titleInput" @bind="newTitle" @bind:event="oninput" maxlength="@ProjectMath.MaxTitleLength"
+                               placeholder="e.g. Clean the gutters" autocomplete="off" />
+                    </label>
+                    <label class="cc-field">
+                        <span class="cc-label">Project</span>
+                        <select @bind="newProjectId">
+                            @foreach (var project in projectChoices)
+                            {
+                                <option value="@project.Id">@project.Title (@project.Area)</option>
+                            }
+                        </select>
+                    </label>
+                    <label class="cc-field">
+                        <span class="cc-label">Due</span>
+                        <input type="date" @bind="newDue" />
+                    </label>
+                </form>
+            }
+        </ChildContent>
+        <Footer>
+            <span class="cc-spacer"></span>
+            <button type="button" class="cc-btn cc-btn-ghost" @onclick="() => adding = false">Cancel</button>
+            @if (projectChoices.Count > 0)
+            {
+                <button type="submit" class="cc-btn" form="@formId" disabled="@(saving || string.IsNullOrWhiteSpace(newTitle))">Add task</button>
+            }
+        </Footer>
+    </Modal>
+}
 
-    private sealed class TodoItem(string title, string area, TimeOnly due)
+@code {
+    private const string LastProjectKey = "todo:last-project";
+    private static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(5);
+
+    private readonly CancellationTokenSource cts = new();
+    private readonly string formId = $"todo-add-{Guid.NewGuid():N}";
+    private List<DueItem>? items;
+    private bool failed;
+    private string? error;
+    private DateOnly today;
+
+    private bool adding;
+    private bool saving;
+    private bool focusTitle;
+    private string? addError;
+    private ElementReference titleInput;
+    private List<Project> projectChoices = [];
+    private string? newTitle;
+    private int newProjectId;
+    private DateOnly? newDue;
+
+    /// <summary>
+    /// A subtask due today or overdue. Checking it off moves it to Done but keeps it in the list (struck
+    /// through) until the next refresh, so it can be unchecked back to the column it came from.
+    /// </summary>
+    private sealed class DueItem(Subtask subtask)
     {
-        public string Title { get; } = title;
-        public string Area { get; } = area;
-        public TimeOnly Due { get; } = due;
+        public Subtask Subtask { get; } = subtask;
+        public SubtaskStatus StatusBefore { get; set; } = subtask.Status;
         public bool Done { get; set; }
+        public bool Busy { get; set; }
+    }
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Runs only once the circuit is interactive, so the refresh loop starts once per open dashboard.
+        if (firstRender)
+        {
+            _ = RefreshLoopAsync();
+        }
+
+        if (focusTitle)
+        {
+            focusTitle = false;
+            await titleInput.FocusAsync();
+        }
+    }
+
+    // Keeps the list right when the dashboard stays open (new day, tasks changed on another device).
+    private async Task RefreshLoopAsync()
+    {
+        using var timer = new PeriodicTimer(RefreshInterval);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cts.Token))
+            {
+                await InvokeAsync(async () =>
+                {
+                    if (!adding && items?.Any(i => i.Busy) != true)
+                    {
+                        await LoadAsync();
+                        StateHasChanged();
+                    }
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Dashboard closed.
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            today = Projects.Today;
+            items = (await Projects.GetDueSubtasksAsync(cts.Token)).Select(s => new DueItem(s)).ToList();
+            failed = false;
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't load due subtasks");
+            failed = items is null;
+        }
+    }
+
+    private async Task ToggleAsync(DueItem item)
+    {
+        var markDone = !item.Done;
+        item.Busy = true;
+        error = null;
+        try
+        {
+            await Projects.MoveSubtaskAsync(item.Subtask.Id, markDone ? SubtaskStatus.Done : item.StatusBefore, int.MaxValue);
+            item.Done = markDone;
+            await ProjectChanges.NotifyChangedAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't update subtask {SubtaskId}", item.Subtask.Id);
+            error = "Couldn't update that task. Try again.";
+        }
+        finally
+        {
+            item.Busy = false;
+        }
+    }
+
+    private async Task OpenAddAsync()
+    {
+        addError = null;
+        newTitle = null;
+        newDue = Projects.Today;
+        try
+        {
+            projectChoices = (await Projects.GetProjectsAsync())
+                .Where(p => p.Status != ProjectStatus.Done)
+                .OrderBy(p => p.Title)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't load projects for quick add");
+            error = "Couldn't load projects. Try again.";
+            return;
+        }
+
+        newProjectId = projectChoices.FirstOrDefault()?.Id ?? 0;
+        try
+        {
+            // Default to the project used last time, e.g. "Weekend Tasks".
+            if (int.TryParse(await JS.InvokeAsync<string?>("localStorage.getItem", LastProjectKey), out var last)
+                && projectChoices.Any(p => p.Id == last))
+            {
+                newProjectId = last;
+            }
+        }
+        catch (JSException)
+        {
+            // Storage blocked; keep the first project.
+        }
+
+        adding = true;
+        focusTitle = projectChoices.Count > 0;
+    }
+
+    private async Task AddAsync()
+    {
+        if (saving || string.IsNullOrWhiteSpace(newTitle))
+        {
+            return;
+        }
+
+        saving = true;
+        addError = null;
+        try
+        {
+            await Projects.CreateSubtaskAsync(newProjectId, new SubtaskInput(newTitle, null, DueDate: newDue));
+            adding = false;
+            try
+            {
+                await JS.InvokeVoidAsync("localStorage.setItem", LastProjectKey, newProjectId.ToString());
+            }
+            catch (JSException)
+            {
+            }
+
+            await LoadAsync();
+            await ProjectChanges.NotifyChangedAsync();
+        }
+        catch (Exception ex) when (ex is ArgumentException or KeyNotFoundException)
+        {
+            addError = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't add a task to project {ProjectId}", newProjectId);
+            addError = "Couldn't add the task. Try again.";
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
     }
 }

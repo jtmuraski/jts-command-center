@@ -1,0 +1,60 @@
+.md-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+    .md-editor textarea {
+        width: 100%;
+        min-height: 2.6rem;
+        resize: vertical;
+        line-height: 1.5;
+    }
+
+        .md-editor textarea.is-dropping {
+            border-color: var(--cc-accent);
+            border-style: dashed;
+            box-shadow: 0 0 0 3px var(--cc-primary-soft);
+        }
+
+.md-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+    .md-toolbar .cc-hint {
+        margin: 0;
+        font-size: 0.78rem;
+    }
+
+.attach {
+    min-height: 2.4rem;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+    .attach svg {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+/* The label stands in for the hidden file input (rendered by InputFile, hence ::deep), so show its focus. */
+.md-toolbar ::deep input[type="file"]:focus-visible + .attach {
+    outline: 2px solid var(--cc-accent);
+}
+
+.uploading {
+    font-size: 0.82rem;
+    color: var(--cc-text-muted);
+}
+
+.error {
+    margin: 0;
+    color: var(--cc-danger);
+    font-size: 0.85rem;
+}

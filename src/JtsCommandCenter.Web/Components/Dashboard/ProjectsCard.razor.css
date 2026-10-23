@@ -16,12 +16,25 @@
     gap: 0.5rem;
 }
 
-    .projects li {
+    .projects a {
+        display: block;
         padding: 0.65rem 0.8rem 0.75rem;
         background: var(--cc-surface-raised);
         border: 1px solid var(--cc-border-subtle);
         border-radius: var(--cc-radius);
+        color: var(--cc-text);
+        transition: border-color 0.15s ease;
     }
+
+        .projects a:hover {
+            border-color: var(--cc-border);
+            color: var(--cc-text-strong);
+        }
+
+        .projects a:focus-visible {
+            outline: 2px solid var(--cc-accent);
+            outline-offset: 2px;
+        }
 
 .row {
     display: flex;
@@ -64,7 +77,27 @@
         background: var(--cc-accent-2);
     }
 
+    .fill.is-held {
+        opacity: 0.45;
+    }
+
+.meta.is-overdue {
+    color: var(--cc-danger);
+    font-weight: 600;
+}
+
+.more {
+    margin: -0.75rem 0 1.25rem;
+    font-size: 0.8rem;
+}
+
+.state {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+}
+
 .view-all {
     margin-top: auto;
+    min-height: 2.5rem;
     justify-content: center;
 }

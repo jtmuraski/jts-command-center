@@ -1,0 +1,124 @@
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+    .page-header p {
+        margin: 0;
+    }
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+    .toolbar .cc-btn {
+        min-height: 2.5rem; /* touch target */
+    }
+
+/* All / Work / Personal */
+.filter {
+    display: flex;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius);
+    overflow: hidden;
+}
+
+    .filter a {
+        display: flex;
+        align-items: center;
+        min-height: 2.5rem;
+        padding: 0 0.9rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--cc-text-muted);
+    }
+
+        .filter a + a {
+            border-left: 1px solid var(--cc-border);
+        }
+
+        .filter a:hover {
+            color: var(--cc-text-strong);
+            background: var(--cc-surface-raised);
+        }
+
+        .filter a.active {
+            color: var(--cc-text-strong);
+            background: var(--cc-primary-soft);
+            box-shadow: inset 0 -2px 0 var(--cc-primary-hover);
+        }
+
+        .filter a:focus-visible {
+            outline: 2px solid var(--cc-accent);
+            outline-offset: -2px;
+        }
+
+.state {
+    padding: 2rem 0;
+    text-align: center;
+}
+
+/* Archive */
+.archive-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 860px;
+}
+
+.archive-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0.85rem;
+    background: var(--cc-surface);
+    border: 1px solid var(--cc-border-subtle);
+    border-left: 3px solid var(--cc-work);
+    border-radius: var(--cc-radius);
+}
+
+    .archive-item.area-personal {
+        border-left-color: var(--cc-personal);
+    }
+
+.archive-text {
+    flex: 1;
+    min-width: 12rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.archive-title {
+    font-weight: 600;
+    color: var(--cc-text-strong);
+    overflow-wrap: anywhere;
+}
+
+.archive-meta {
+    font-size: 0.82rem;
+    color: var(--cc-text-muted);
+}
+
+.archive-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+    .archive-actions .cc-btn {
+        min-height: 2.5rem;
+    }
+
+.confirm-text {
+    margin: 0;
+}

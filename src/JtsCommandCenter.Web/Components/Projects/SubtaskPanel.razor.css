@@ -1,0 +1,139 @@
+.header-edit {
+    flex: none;
+    min-height: 2.5rem;
+}
+
+.block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--cc-border-subtle);
+}
+
+    .block:first-child {
+        padding-top: 0.25rem;
+    }
+
+    .block h3 {
+        margin: 0;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--cc-text-muted);
+    }
+
+/* To Do / In Progress / Blocked / Done as one row of buttons; the current one is highlighted. */
+.status-switch {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius);
+    overflow: hidden;
+}
+
+    .status-switch button {
+        min-height: 2.75rem;
+        padding: 0 0.4rem;
+        border: none;
+        border-bottom: 3px solid transparent;
+        background: var(--cc-surface);
+        color: var(--cc-text-muted);
+        font: inherit;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+
+        .status-switch button + button {
+            border-left: 1px solid var(--cc-border);
+        }
+
+        .status-switch button:hover {
+            color: var(--cc-text-strong);
+            background: var(--cc-surface-raised);
+        }
+
+        .status-switch button:focus-visible {
+            outline: 2px solid var(--cc-accent);
+            outline-offset: -2px;
+        }
+
+        .status-switch button.is-current {
+            color: var(--cc-text-strong);
+            background: var(--cc-surface-raised);
+            border-bottom-color: var(--status-color);
+            font-weight: 600;
+            cursor: default;
+        }
+
+.blocked-reason {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid var(--cc-danger);
+    background: var(--cc-surface);
+    border-radius: var(--cc-radius-sm);
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+}
+
+.facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+    margin: 0;
+}
+
+    .facts div {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .facts dt {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--cc-text-faint);
+    }
+
+    .facts dd {
+        margin: 0;
+    }
+
+    .facts .is-overdue dd {
+        color: var(--cc-danger);
+        font-weight: 600;
+    }
+
+    .facts .priority-high {
+        color: var(--cc-warning);
+    }
+
+.empty {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.inline-link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--cc-accent);
+    font: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+    .inline-link:hover {
+        color: var(--cc-text-strong);
+    }
+
+.danger-zone {
+    padding-top: 1.25rem;
+}
+
+    .danger-zone .cc-btn {
+        min-height: 2.5rem;
+    }

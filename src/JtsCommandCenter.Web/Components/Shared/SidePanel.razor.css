@@ -1,0 +1,114 @@
+/* Below Modal (z-index 100), so dialogs opened from the panel appear on top of it. */
+.panel-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.panel-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--cc-overlay);
+}
+
+.side-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(600px, 100%);
+    height: 100%;
+    background: var(--cc-bg);
+    border-left: 1px solid var(--cc-border);
+    box-shadow: var(--cc-shadow);
+    animation: panel-in 0.18s ease-out;
+}
+
+    .side-panel:focus {
+        outline: none;
+    }
+
+/* Slide only, no fade: the panel must never be see-through, even if an animation stalls. */
+@keyframes panel-in {
+    from {
+        transform: translateX(24px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .side-panel {
+        animation: none;
+    }
+}
+
+.panel-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem 1rem 0.85rem 1.25rem;
+    background: var(--cc-surface);
+    border-bottom: 1px solid var(--cc-border-subtle);
+}
+
+.panel-title {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+    .panel-title h2 {
+        margin: 0;
+        font-size: 1.2rem;
+        overflow-wrap: anywhere;
+    }
+
+.eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cc-text-faint);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.panel-close {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: none;
+    border-radius: var(--cc-radius);
+    background: none;
+    color: var(--cc-text-muted);
+    cursor: pointer;
+}
+
+    .panel-close svg {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+    }
+
+    .panel-close:hover {
+        color: var(--cc-text-strong);
+        background: var(--cc-surface-raised);
+    }
+
+    .panel-close:focus-visible {
+        outline: 2px solid var(--cc-accent);
+    }
+
+.panel-body {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1rem 1.25rem 2rem;
+}

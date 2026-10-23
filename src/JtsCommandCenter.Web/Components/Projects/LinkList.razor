@@ -1,0 +1,143 @@
+@inject IProjectService Projects
+@inject ILogger<LinkList> Logger
+
+@* Labeled links (tickets, specs, repos) with a small form to add one. *@
+<div class="link-list">
+    @if (Links.Count > 0)
+    {
+        <ul class="links">
+            @foreach (var link in Links)
+            {
+                <li @key="link.Id">
+                    <a href="@link.Url" target="_blank" rel="noopener noreferrer" title="@link.Url">
+                        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
+                        <span class="label">@link.Label</span>
+                        @if (HostOf(link.Url) is { } host && host != link.Label)
+                        {
+                            <span class="host">@host</span>
+                        }
+                    </a>
+                    <button type="button" class="remove" aria-label="Remove link @link.Label" title="Remove" @onclick="() => DeleteAsync(link)">
+                        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+    else if (!adding)
+    {
+        <p class="empty cc-muted">No links yet.</p>
+    }
+
+    @if (adding)
+    {
+        <form class="add-form" @onsubmit="AddAsync">
+            <label class="sr-only" for="@($"{formId}-url")">URL</label>
+            <input id="@($"{formId}-url")" @ref="urlInput" type="url" inputmode="url" @bind="url" @bind:event="oninput"
+                   placeholder="https://…" autocomplete="off" maxlength="@ProjectMath.MaxUrlLength" />
+            <label class="sr-only" for="@($"{formId}-label")">Label</label>
+            <input id="@($"{formId}-label")" @bind="label" placeholder="Label (optional)" autocomplete="off" maxlength="@ProjectMath.MaxLabelLength" />
+            <div class="add-actions">
+                <button type="button" class="cc-btn cc-btn-ghost" @onclick="() => adding = false">Cancel</button>
+                <button type="submit" class="cc-btn" disabled="@(busy || ProjectMath.ParseLink(url) is null)">Add link</button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <button type="button" class="cc-btn cc-btn-ghost add" @onclick="StartAdding">+ Add link</button>
+    }
+
+    @if (error is not null)
+    {
+        <p class="error" role="alert">@error</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public int ProjectId { get; set; }
+
+    /// <summary>When set, new links go on this subtask instead of the project.</summary>
+    [Parameter] public int? SubtaskId { get; set; }
+
+    [Parameter, EditorRequired] public IReadOnlyList<Link> Links { get; set; } = [];
+
+    /// <summary>A link was added or removed; the parent should reload.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private readonly string formId = $"link-{Guid.NewGuid():N}";
+    private ElementReference urlInput;
+    private bool adding;
+    private bool focusUrl;
+    private string? url;
+    private string? label;
+    private bool busy;
+    private string? error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusUrl)
+        {
+            focusUrl = false;
+            await urlInput.FocusAsync();
+        }
+    }
+
+    private void StartAdding()
+    {
+        adding = true;
+        focusUrl = true;
+        url = label = error = null;
+    }
+
+    private static string HostOf(string url) => Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.Host : "";
+
+    private async Task AddAsync()
+    {
+        if (busy || ProjectMath.ParseLink(url) is null)
+        {
+            return;
+        }
+
+        busy = true;
+        error = null;
+        try
+        {
+            if (SubtaskId is int subtaskId)
+            {
+                await Projects.AddSubtaskLinkAsync(subtaskId, label, url!);
+            }
+            else
+            {
+                await Projects.AddProjectLinkAsync(ProjectId, label, url!);
+            }
+
+            adding = false;
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't add a link to project {ProjectId}", ProjectId);
+            error = ex is ArgumentException ? ex.Message : "Couldn't add the link. Try again.";
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task DeleteAsync(Link link)
+    {
+        error = null;
+        try
+        {
+            await Projects.DeleteLinkAsync(link.Id);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Couldn't remove link {LinkId}", link.Id);
+            error = "Couldn't remove the link. Try again.";
+        }
+    }
+}

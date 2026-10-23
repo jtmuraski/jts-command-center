@@ -1,0 +1,180 @@
+@implements IAsyncDisposable
+@inject IAttachmentService Attachments
+@inject IJSRuntime JS
+@inject ILogger<MarkdownEditor> Logger
+@inject IOptions<AttachmentOptions> AttachmentSettings
+
+@* A Markdown textarea that takes images: paste a screenshot, drop a file, or use "Attach image". Each image
+   is uploaded and a Markdown image tag is inserted at the cursor. *@
+<div class="md-editor">
+    <textarea id="@Id" @ref="textarea" rows="@Rows" placeholder="@Placeholder" value="@Value"
+              @oninput="e => ValueChanged.InvokeAsync(e.Value?.ToString())"></textarea>
+    <div class="md-toolbar">
+        @if (ProjectId is null)
+        {
+            <span class="cc-hint">Markdown works · images can be added once this is saved</span>
+        }
+        else
+        {
+            <span class="cc-hint">Markdown works · paste or drop images</span>
+            <span class="cc-spacer"></span>
+            @if (uploading > 0)
+            {
+                <span class="uploading" role="status">Uploading image…</span>
+            }
+            @* The file input comes first so its focus can be shown on the label after it. *@
+            <InputFile id="@fileId" class="sr-only" accept="image/png,image/jpeg,image/gif,image/webp" multiple OnChange="OnFilesChosenAsync" />
+            <label class="cc-btn cc-btn-ghost attach" for="@fileId">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9.5a1.5 1.5 0 1 0 0-.01" /></svg>
+                Attach image
+            </label>
+        }
+    </div>
+    @if (error is not null)
+    {
+        <p class="error" role="alert">@error</p>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>The textarea's id, so a label elsewhere can point at it.</summary>
+    [Parameter] public string Id { get; set; } = $"md-{Guid.NewGuid():N}";
+
+    /// <summary>Where images are attached. Null until the project exists, which turns uploads off.</summary>
+    [Parameter] public int? ProjectId { get; set; }
+    [Parameter] public int? SubtaskId { get; set; }
+
+    [Parameter] public int Rows { get; set; } = 7;
+    [Parameter] public string? Placeholder { get; set; }
+
+    private readonly string fileId = $"md-file-{Guid.NewGuid():N}";
+    private ElementReference textarea;
+    private IJSObjectReference? module;
+    private IJSObjectReference? listeners;
+    private DotNetObjectReference<MarkdownEditor>? selfReference;
+    private int uploading;
+    private string? error;
+
+    private long MaxBytes => AttachmentSettings.Value.MaxBytes;
+
+    private string TooLarge => $"Images can be at most {MaxBytes / (1024 * 1024)} MB.";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || ProjectId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            selfReference = DotNetObjectReference.Create(this);
+            module = await JS.InvokeAsync<IJSObjectReference>("import", $"./{Assets["Components/Projects/MarkdownEditor.razor.js"]}");
+            listeners = await module.InvokeAsync<IJSObjectReference>("init", textarea, selfReference);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException ex)
+        {
+            // Paste and drop won't work, but the "Attach image" button still does.
+            Logger.LogWarning(ex, "Couldn't set up image paste and drop");
+        }
+    }
+
+    /// <summary>Called by the script for each image pasted or dropped onto the textarea.</summary>
+    [JSInvokable]
+    public async Task OnImagePasted(IJSStreamReference image, string? fileName, long size)
+    {
+        await using (image)
+        {
+            if (size > MaxBytes)
+            {
+                error = TooLarge;
+                StateHasChanged();
+                return;
+            }
+
+            await UploadAsync(fileName, () => image.OpenReadStreamAsync(MaxBytes).AsTask());
+        }
+    }
+
+    private async Task OnFilesChosenAsync(InputFileChangeEventArgs e)
+    {
+        foreach (var file in e.GetMultipleFiles(10))
+        {
+            if (file.Size > MaxBytes)
+            {
+                error = TooLarge;
+                continue;
+            }
+
+            await UploadAsync(file.Name, () => Task.FromResult(file.OpenReadStream(MaxBytes)));
+        }
+    }
+
+    private async Task UploadAsync(string? fileName, Func<Task<Stream>> open)
+    {
+        if (ProjectId is not int projectId)
+        {
+            return;
+        }
+
+        uploading++;
+        error = null;
+        StateHasChanged();
+        try
+        {
+            await using var stream = await open();
+            var attachment = await Attachments.AddImageAsync(projectId, SubtaskId, fileName, stream);
+            if (module is not null)
+            {
+                // Inserting through the script keeps the cursor position and raises the input event that updates Value.
+                await module.InvokeVoidAsync("insertAtCursor", textarea, ImageFormats.MarkdownFor(attachment));
+            }
+            else
+            {
+                await ValueChanged.InvokeAsync($"{Value?.TrimEnd()}\n\n{ImageFormats.MarkdownFor(attachment)}\n".TrimStart());
+            }
+        }
+        catch (ArgumentException ex)
+        {
+            error = ex.Message;
+        }
+        catch (Exception ex) when (ex is not JSDisconnectedException)
+        {
+            Logger.LogError(ex, "Couldn't upload an image to project {ProjectId}", projectId);
+            error = "Couldn't upload that image. Try again.";
+        }
+        finally
+        {
+            uploading--;
+            StateHasChanged();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (listeners is not null)
+            {
+                await listeners.InvokeVoidAsync("dispose");
+                await listeners.DisposeAsync();
+            }
+
+            if (module is not null)
+            {
+                await module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+
+        selfReference?.Dispose();
+    }
+}

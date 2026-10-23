@@ -1,0 +1,77 @@
+@{
+    var overdue = ProjectMath.IsOverdue(DueDate, Done, Today);
+    var dueToday = !Done && DueDate == Today;
+}
+@* A card on a projects or subtask board. *@
+<article class="work-card @Accent @(Done ? "is-done" : "")"
+         role="button" tabindex="0" aria-label="@Title" @onclick="() => OnOpen.InvokeAsync()" @onkeydown="OnKeyDown">
+    <div class="card-top">
+        <h3 class="title">@Title</h3>
+        <button type="button" class="card-actions" data-no-drag title="Actions" aria-label="Actions for @Title"
+                @onclick="() => OnActions.InvokeAsync()" @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="meta">
+        @if (Area is { } area)
+        {
+            <span class="area">@area</span>
+        }
+        @if (Priority != Priority.Normal)
+        {
+            <span class="priority priority-@Priority.ToString().ToLowerInvariant()">@Priority priority</span>
+        }
+        @if (DueDate is DateOnly due)
+        {
+            <span class="due @(overdue ? "is-overdue" : dueToday ? "is-today" : "")">
+                @(overdue ? $"Overdue · {DateText.Short(due, Today)}" : dueToday ? "Due today" : $"Due {DateText.Short(due, Today)}")
+            </span>
+        }
+        @Extra
+    </div>
+
+    @if (Reason is { } reason)
+    {
+        <p class="reason">@reason</p>
+    }
+
+    @if (Progress is { Total: > 0 } progress)
+    {
+        <div class="progress" title="@progress.Done of @progress.Total subtasks done">
+            <div class="bar"><div class="fill" style="width: @(progress.Percent)%"></div></div>
+            <span class="progress-text">@progress.Done/@progress.Total</span>
+        </div>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public DateOnly Today { get; set; }
+    [Parameter] public bool Done { get; set; }
+    [Parameter] public Priority Priority { get; set; } = Priority.Normal;
+    [Parameter] public DateOnly? DueDate { get; set; }
+
+    /// <summary>Shown as a chip and as the card's color stripe (projects board).</summary>
+    [Parameter] public WorkArea? Area { get; set; }
+
+    /// <summary>Why the item is On Hold or Blocked.</summary>
+    [Parameter] public string? Reason { get; set; }
+
+    [Parameter] public ProjectProgress? Progress { get; set; }
+
+    /// <summary>More meta items after the due date (e.g. a note count).</summary>
+    [Parameter] public RenderFragment? Extra { get; set; }
+
+    [Parameter] public EventCallback OnOpen { get; set; }
+
+    /// <summary>The "..." button: move, edit, and so on. Also the way to move a card without dragging.</summary>
+    [Parameter] public EventCallback OnActions { get; set; }
+
+    private string Accent => Area is { } area ? $"area-{area.ToString().ToLowerInvariant()}" : "";
+
+    private Task OnKeyDown(KeyboardEventArgs e) =>
+        e.Key is "Enter" or " " ? OnOpen.InvokeAsync() : Task.CompletedTask;
+}

@@ -1,0 +1,37 @@
+@* Asks for an optional one-line reason, e.g. why a card is going On Hold or Blocked. *@
+<Modal Title="@Title" Size="small" AutoFocus="false" OnClose="() => OnCancel.InvokeAsync()">
+    <ChildContent>
+        <form id="@formId" class="cc-form" @onsubmit="() => OnConfirm.InvokeAsync(reason)">
+            <label class="cc-field">
+                <span class="cc-label">@Label <span class="cc-hint">optional</span></span>
+                <input @ref="input" @bind="reason" maxlength="@ProjectMath.MaxReasonLength" placeholder="@Placeholder" autocomplete="off" />
+            </label>
+        </form>
+    </ChildContent>
+    <Footer>
+        <span class="cc-spacer"></span>
+        <button type="button" class="cc-btn cc-btn-ghost" @onclick="() => OnCancel.InvokeAsync()">Cancel</button>
+        <button type="submit" class="cc-btn" form="@formId">@ConfirmText</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string Label { get; set; } = "Reason";
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string ConfirmText { get; set; } = "Save";
+    [Parameter] public EventCallback<string?> OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private readonly string formId = $"reason-{Guid.NewGuid():N}";
+    private ElementReference input;
+    private string? reason;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await input.FocusAsync();
+        }
+    }
+}

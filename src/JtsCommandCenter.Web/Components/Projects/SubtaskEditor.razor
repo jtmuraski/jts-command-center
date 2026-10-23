@@ -1,0 +1,188 @@
+@inject IProjectService Projects
+
+<Modal Title="@(IsNew ? "New subtask" : "Edit subtask")" OnClose="() => OnClose.InvokeAsync()" AutoFocus="false">
+    <ChildContent>
+        <form id="@formId" class="cc-form" @onsubmit="SaveAsync">
+            @if (conflict)
+            {
+                <div class="cc-form-notice" role="alert">
+                    <span>This subtask was changed on another device after you opened it.</span>
+                    <button type="button" class="cc-btn cc-btn-ghost" @onclick="LoadLatestAsync">Load latest (discards your edits)</button>
+                </div>
+            }
+            @if (errors.Count > 0)
+            {
+                <ul class="cc-form-errors" role="alert">
+                    @foreach (var error in errors)
+                    {
+                        <li>@error</li>
+                    }
+                </ul>
+            }
+
+            <label class="cc-field">
+                <span class="cc-label">Title</span>
+                <input @ref="titleInput" @bind="title" @bind:event="oninput" maxlength="@ProjectMath.MaxTitleLength"
+                       placeholder="e.g. Engine updates" autocomplete="off" />
+            </label>
+
+            <fieldset class="cc-field">
+                <legend class="cc-label">Priority</legend>
+                <div class="cc-segmented">
+                    @foreach (var option in Enum.GetValues<Priority>())
+                    {
+                        <label>
+                            <input type="radio" name="@($"{formId}-priority")" checked="@(priority == option)" @onchange="() => priority = option" />
+                            <span>@option</span>
+                        </label>
+                    }
+                </div>
+            </fieldset>
+
+            <div class="cc-form-row">
+                <label class="cc-field">
+                    <span class="cc-label">Start date</span>
+                    <input type="date" @bind="startDate" />
+                </label>
+                <label class="cc-field">
+                    <span class="cc-label">Due date</span>
+                    <input type="date" @bind="dueDate" />
+                </label>
+                @if (IsNew)
+                {
+                    <label class="cc-field">
+                        <span class="cc-label">Column</span>
+                        <select @bind="status">
+                            @foreach (var option in Enum.GetValues<SubtaskStatus>())
+                            {
+                                <option value="@option">@ProjectMath.DisplayName(option)</option>
+                            }
+                        </select>
+                    </label>
+                }
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="@($"{formId}-description")">Description</label>
+                <MarkdownEditor Id="@($"{formId}-description")" @bind-Value="description" ProjectId="ProjectId" SubtaskId="Subtask?.Id"
+                                Rows="6" Placeholder="What needs to happen for this to be done? Paste a screenshot to attach it." />
+            </div>
+        </form>
+    </ChildContent>
+    <Footer>
+        @if (!IsNew && OnDelete.HasDelegate)
+        {
+            <button type="button" class="cc-btn cc-btn-danger" disabled="@saving" @onclick="() => OnDelete.InvokeAsync(Subtask!)">Delete</button>
+        }
+        <span class="cc-spacer"></span>
+        <button type="button" class="cc-btn cc-btn-ghost" @onclick="() => OnClose.InvokeAsync()">Cancel</button>
+        <button type="submit" class="cc-btn" form="@formId" disabled="@(saving || string.IsNullOrWhiteSpace(title))">
+            @(IsNew ? "Add subtask" : "Save")
+        </button>
+    </Footer>
+</Modal>
+
+@code {
+    /// <summary>The subtask to edit, or null to add one to <see cref="ProjectId"/>.</summary>
+    [Parameter] public Subtask? Subtask { get; set; }
+    [Parameter] public int ProjectId { get; set; }
+
+    /// <summary>Column a new subtask starts in (e.g. the column whose "+" was used).</summary>
+    [Parameter] public SubtaskStatus InitialStatus { get; set; }
+
+    [Parameter] public EventCallback<Subtask> OnSaved { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<Subtask> OnDelete { get; set; }
+
+    private readonly string formId = $"subtask-{Guid.NewGuid():N}";
+    private ElementReference titleInput;
+
+    private string title = "";
+    private string? description;
+    private Priority priority = Priority.Normal;
+    private SubtaskStatus status;
+    private DateOnly? startDate;
+    private DateOnly? dueDate;
+    private Guid version;
+
+    private IReadOnlyList<string> errors = [];
+    private bool conflict;
+    private bool saving;
+
+    private bool IsNew => Subtask is null;
+
+    protected override void OnInitialized()
+    {
+        if (Subtask is null)
+        {
+            status = InitialStatus;
+        }
+        else
+        {
+            Load(Subtask);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await titleInput.FocusAsync();
+        }
+    }
+
+    private void Load(Subtask subtask)
+    {
+        title = subtask.Title;
+        description = subtask.Description;
+        priority = subtask.Priority;
+        startDate = subtask.StartDate;
+        dueDate = subtask.DueDate;
+        version = subtask.Version;
+    }
+
+    private async Task SaveAsync()
+    {
+        errors = ProjectMath.Validate(title, startDate, dueDate);
+        if (errors.Count > 0 || saving)
+        {
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            var input = new SubtaskInput(title, description, priority, startDate, dueDate);
+            var saved = Subtask is null
+                ? await Projects.CreateSubtaskAsync(ProjectId, input, status)
+                : await Projects.UpdateSubtaskAsync(Subtask.Id, version, input);
+            await OnSaved.InvokeAsync(saved);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            conflict = true;
+        }
+        catch (Exception ex) when (ex is ArgumentException or KeyNotFoundException)
+        {
+            errors = [ex.Message];
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task LoadLatestAsync()
+    {
+        var latest = await Projects.GetSubtaskAsync(Subtask!.Id);
+        if (latest is null)
+        {
+            errors = ["This subtask no longer exists."];
+            return;
+        }
+
+        Load(latest);
+        conflict = false;
+        errors = [];
+    }
+}
