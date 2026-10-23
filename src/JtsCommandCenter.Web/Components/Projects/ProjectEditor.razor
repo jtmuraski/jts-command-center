@@ -77,11 +77,11 @@
                 }
             </div>
 
-            <label class="cc-field">
-                <span class="cc-label">Description <span class="cc-hint">Markdown works</span></span>
-                <textarea rows="7" @bind="description"
-                          placeholder="What is this project, and what does done look like?"></textarea>
-            </label>
+            <div class="cc-field">
+                <label class="cc-label" for="@($"{formId}-description")">Description</label>
+                <MarkdownEditor Id="@($"{formId}-description")" @bind-Value="description" ProjectId="Project?.Id"
+                                Placeholder="What is this project, and what does done look like?" />
+            </div>
         </form>
     </ChildContent>
     <Footer>

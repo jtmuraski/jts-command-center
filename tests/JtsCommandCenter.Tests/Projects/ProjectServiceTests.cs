@@ -3,6 +3,7 @@ using JtsCommandCenter.Infrastructure.Data;
 using JtsCommandCenter.Infrastructure.Projects;
 using JtsCommandCenter.Tests.Support;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
@@ -19,7 +20,8 @@ public sealed class ProjectServiceTests : IDisposable
     private readonly ProjectService service;
 
     public ProjectServiceTests() =>
-        service = new ProjectService(database, time, Options.Create(new ProjectsOptions { TimeZone = "America/Chicago" }));
+        service = new ProjectService(database, time, Options.Create(new ProjectsOptions { TimeZone = "America/Chicago" }),
+            new FakeAttachmentStore(), NullLogger<ProjectService>.Instance);
 
     public void Dispose() => database.Dispose();
 

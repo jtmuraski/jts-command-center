@@ -15,6 +15,7 @@ internal sealed class CommandCenterDbContext(DbContextOptions<CommandCenterDbCon
     public DbSet<Subtask> Subtasks => Set<Subtask>();
     public DbSet<Note> Notes => Set<Note>();
     public DbSet<Link> Links => Set<Link>();
+    public DbSet<Attachment> Attachments => Set<Attachment>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -42,6 +43,7 @@ internal sealed class CommandCenterDbContext(DbContextOptions<CommandCenterDbCon
             project.HasMany(p => p.Subtasks).WithOne(s => s.Project).HasForeignKey(s => s.ProjectId).OnDelete(DeleteBehavior.Cascade);
             project.HasMany(p => p.Notes).WithOne().HasForeignKey(n => n.ProjectId).OnDelete(DeleteBehavior.Cascade);
             project.HasMany(p => p.Links).WithOne().HasForeignKey(l => l.ProjectId).OnDelete(DeleteBehavior.Cascade);
+            project.HasMany(p => p.Attachments).WithOne().HasForeignKey(a => a.ProjectId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Subtask>(subtask =>
@@ -51,10 +53,19 @@ internal sealed class CommandCenterDbContext(DbContextOptions<CommandCenterDbCon
             subtask.Property(s => s.Version).IsConcurrencyToken();
             subtask.HasIndex(s => new { s.ProjectId, s.Status, s.SortOrder });
 
-            // SQL Server rejects a second cascade path to Notes/Links (Project → Subtask → Note), so the
-            // service deletes a subtask's notes and links itself.
+            // SQL Server rejects a second cascade path to Notes/Links/Attachments (Project → Subtask → Note),
+            // so the service deletes a subtask's rows itself.
             subtask.HasMany(s => s.Notes).WithOne().HasForeignKey(n => n.SubtaskId).OnDelete(DeleteBehavior.ClientCascade);
             subtask.HasMany(s => s.Links).WithOne().HasForeignKey(l => l.SubtaskId).OnDelete(DeleteBehavior.ClientCascade);
+            subtask.HasMany(s => s.Attachments).WithOne().HasForeignKey(a => a.SubtaskId).OnDelete(DeleteBehavior.ClientCascade);
+        });
+
+        modelBuilder.Entity<Attachment>(attachment =>
+        {
+            attachment.Property(a => a.Id).ValueGeneratedNever();
+            attachment.Property(a => a.FileName).HasMaxLength(255);
+            attachment.Property(a => a.ContentType).HasMaxLength(50);
+            attachment.Property(a => a.StorageKey).HasMaxLength(64);
         });
 
         modelBuilder.Entity<Link>(link =>

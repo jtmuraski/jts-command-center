@@ -34,4 +34,5 @@ public sealed class Subtask
 
     public List<Note> Notes { get; set; } = [];
     public List<Link> Links { get; set; } = [];
+    public List<Attachment> Attachments { get; set; } = [];
 }

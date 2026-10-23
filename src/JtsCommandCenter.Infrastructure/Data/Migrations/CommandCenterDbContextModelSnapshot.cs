@@ -22,6 +22,47 @@ namespace JtsCommandCenter.Infrastructure.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("JtsCommandCenter.Core.Projects.Attachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int?>("SubtaskId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("SubtaskId");
+
+                    b.ToTable("Attachments");
+                });
+
             modelBuilder.Entity("JtsCommandCenter.Core.Projects.Link", b =>
                 {
                     b.Property<int>("Id")
@@ -225,6 +266,20 @@ namespace JtsCommandCenter.Infrastructure.Data.Migrations
                     b.ToTable("Subtasks");
                 });
 
+            modelBuilder.Entity("JtsCommandCenter.Core.Projects.Attachment", b =>
+                {
+                    b.HasOne("JtsCommandCenter.Core.Projects.Project", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("JtsCommandCenter.Core.Projects.Subtask", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("SubtaskId")
+                        .OnDelete(DeleteBehavior.ClientCascade);
+                });
+
             modelBuilder.Entity("JtsCommandCenter.Core.Projects.Link", b =>
                 {
                     b.HasOne("JtsCommandCenter.Core.Projects.Project", null)
@@ -266,6 +321,8 @@ namespace JtsCommandCenter.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("JtsCommandCenter.Core.Projects.Project", b =>
                 {
+                    b.Navigation("Attachments");
+
                     b.Navigation("Links");
 
                     b.Navigation("Notes");
@@ -275,6 +332,8 @@ namespace JtsCommandCenter.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("JtsCommandCenter.Core.Projects.Subtask", b =>
                 {
+                    b.Navigation("Attachments");
+
                     b.Navigation("Links");
 
                     b.Navigation("Notes");

@@ -40,4 +40,7 @@ public sealed class Project
 
     /// <summary>Links on the project and on its subtasks.</summary>
     public List<Link> Links { get; set; } = [];
+
+    /// <summary>Images uploaded for the project's and its subtasks' descriptions.</summary>
+    public List<Attachment> Attachments { get; set; } = [];
 }

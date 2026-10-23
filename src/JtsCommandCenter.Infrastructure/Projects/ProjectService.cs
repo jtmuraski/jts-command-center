@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using JtsCommandCenter.Core.Projects;
 using JtsCommandCenter.Infrastructure.Data;
@@ -9,7 +10,9 @@ namespace JtsCommandCenter.Infrastructure.Projects;
 internal sealed class ProjectService(
     IDbContextFactory<CommandCenterDbContext> contextFactory,
     TimeProvider time,
-    IOptions<ProjectsOptions> options) : IProjectService
+    IOptions<ProjectsOptions> options,
+    IAttachmentStore attachmentStore,
+    ILogger<ProjectService> logger) : IProjectService
 {
     private readonly TimeZoneInfo zone = ResolveZone(options.Value.TimeZone);
 
@@ -144,6 +147,7 @@ internal sealed class ProjectService(
             .Include(p => p.Subtasks)
             .Include(p => p.Notes)
             .Include(p => p.Links)
+            .Include(p => p.Attachments)
             .AsSplitQuery()
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken)
             ?? throw NotFound("Project", id);
@@ -153,8 +157,10 @@ internal sealed class ProjectService(
             throw new InvalidOperationException("Archive the project before deleting it.");
         }
 
+        var storageKeys = project.Attachments.Select(a => a.StorageKey).ToList();
         db.Projects.Remove(project);
         await db.SaveChangesAsync(cancellationToken);
+        await DeleteStoredAttachmentsAsync(storageKeys);
     }
 
     public async Task<Subtask?> GetSubtaskAsync(int id, CancellationToken cancellationToken = default)
@@ -245,17 +251,20 @@ internal sealed class ProjectService(
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        // The notes and links must be loaded: they're deleted by EF, not by the database (see the context).
+        // The notes, links, and attachments must be loaded: they're deleted by EF, not by the database (see the context).
         var subtask = await db.Subtasks
             .Include(s => s.Notes)
             .Include(s => s.Links)
+            .Include(s => s.Attachments)
             .AsSplitQuery()
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken)
             ?? throw NotFound("Subtask", id);
 
+        var storageKeys = subtask.Attachments.Select(a => a.StorageKey).ToList();
         db.Subtasks.Remove(subtask);
         LogActivity(db, subtask.ProjectId, null, $"Deleted subtask \"{subtask.Title}\"", Now);
         await db.SaveChangesAsync(cancellationToken);
+        await DeleteStoredAttachmentsAsync(storageKeys);
     }
 
     public async Task<IReadOnlyList<Subtask>> GetDueSubtasksAsync(CancellationToken cancellationToken = default)
@@ -368,6 +377,25 @@ internal sealed class ProjectService(
         }
     }
 
+    /// <summary>
+    /// Removes image bytes after their rows are gone. Best effort: the delete has already happened, so a
+    /// storage failure only leaves an unreachable file behind, which is logged.
+    /// </summary>
+    private async Task DeleteStoredAttachmentsAsync(IEnumerable<string> storageKeys)
+    {
+        foreach (var key in storageKeys)
+        {
+            try
+            {
+                await attachmentStore.DeleteAsync(key, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Couldn't delete stored attachment {StorageKey}", key);
+            }
+        }
+    }
+
     private static void Apply(Project project, ProjectInput input, DateTime now)
     {
         project.Title = input.Title.Trim();
@@ -393,7 +421,7 @@ internal sealed class ProjectService(
 
     private Link NewLink(string? label, string url)
     {
-        var uri = ProjectMath.ParseLink(url) ?? throw new ArgumentException("Links must be full http or https URLs.", nameof(url));
+        var uri = ProjectMath.ParseLink(url) ?? throw new ArgumentException("Links must be full http or https URLs.");
         var text = ProjectMath.Clean(label) ?? uri.Host;
         return new Link
         {
@@ -477,7 +505,7 @@ internal sealed class ProjectService(
     }
 
     private static string RequireBody(string body) =>
-        ProjectMath.Clean(body) ?? throw new ArgumentException("A note can't be empty.", nameof(body));
+        ProjectMath.Clean(body) ?? throw new ArgumentException("A note can't be empty.");
 
     private static string? Reason(string? reason)
     {

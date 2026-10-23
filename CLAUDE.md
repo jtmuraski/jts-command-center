@@ -25,28 +25,29 @@ src/
   JtsCommandCenter.Core/         Domain models, service interfaces, options classes, pure logic (no I/O, no packages)
     Weather/                     IWeatherService, WeatherReport, WeatherOptions, WeatherCondition
     Sports/                      ISportsService, IScoreboardService, ISportsNewsService, models, options, ScheduleMath
-    Projects/                    IProjectService, Project/Subtask/Note/Link entities, inputs, ProjectMath
+    Projects/                    IProjectService, IAttachmentService/IAttachmentStore, entities, inputs, ProjectMath, ImageFormats
   JtsCommandCenter.Infrastructure/  Implementations that call external services, plus DI registration
     ServiceCollectionExtensions.cs  AddWeather / AddSports / AddProjects, MigrateDatabaseAsync
     Data/                        CommandCenterDbContext (EF Core), design-time factory, Migrations/
     Weather/                     OpenMeteoWeatherService, WMO code mapping
     Sports/                      ESPN schedule/scoreboard services, RSS/Atom news service, EspnJson helpers
-    Projects/                    ProjectService (EF Core)
+    Projects/                    ProjectService (EF Core), AttachmentService, Local/BlobAttachmentStore
   JtsCommandCenter.Web/          Blazor Web App (UI + startup only)
+    Endpoints/                   Minimal API endpoints (GET /attachments/{id})
     Components/
       App.razor                  HTML shell, head, scripts
       Routes.razor               Router
       Layout/                    MainLayout (sidebar + topbar shell), NavMenu, ReconnectModal
       Pages/                     Routable pages (Home = dashboard; Sports/ = Sports Center pages; Projects/ = board and project page)
       SportsCenter/              Sports Center components (ScoreboardCard, NewsList, GameDetailView, WinProbabilityChart)
-      Projects/                  Project components (WorkItemCard, ProjectEditor/SubtaskEditor dialogs, SubtaskPanel, WorkLog, LinkList, DateText)
+      Projects/                  Project components (WorkItemCard, ProjectEditor/SubtaskEditor dialogs, SubtaskPanel, MarkdownEditor, WorkLog, LinkList, DateText)
       Dashboard/                 Dashboard cards (Weather, Todo, Projects, Sports, News)
       Shared/                    Reusable components (DashboardCard, WeatherIcon, KanbanBoard, Modal, SidePanel, ReasonPrompt, Markdown/MarkdownText)
     wwwroot/app.css              Global theme: color tokens + base styles
     wwwroot/lib/sortablejs/      Vendored SortableJS 1.15.6 (MIT), used by KanbanBoard for drag and drop
 tests/
   JtsCommandCenter.Tests/        xUnit tests for Core logic, Infrastructure services, and Web helpers (e.g. MarkdownText)
-    Support/                     FakeHttpHandler (canned HTTP responses), TestDatabase (in-memory SQLite), ESPN JSON fixtures
+    Support/                     FakeHttpHandler (canned HTTP responses), TestDatabase (in-memory SQLite), FakeAttachmentStore, ESPN JSON fixtures
 ```
 
 Dependencies point inward: Web → Infrastructure → Core, and Web → Core. Core references nothing.
@@ -121,6 +122,11 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
   - Projects are archived first, and only archived projects can be deleted.
   - SQL Server allows only one cascade path to Notes/Links. Subtask → Note/Link is therefore `ClientCascade`, and the service loads those rows before removing a subtask or project.
 - **"Today"** for due dates comes from `Projects:TimeZone`, not server time.
+- **Image attachments:**
+  - **Adding images:** descriptions use `MarkdownEditor`. Paste or drop an image, or use "Attach image"; it uploads through `IAttachmentService` and inserts `![name](/attachments/{guid})` at the cursor. A new project has no id yet, so it can take images only after its first save.
+  - **What's accepted:** PNG, JPEG, GIF and WebP up to `Attachments:MaxBytes`, identified from the file's first bytes (`ImageFormats.Detect`). The browser's claimed type and the file name are ignored, and SVG is never allowed.
+  - **Where the bytes go:** an `IAttachmentStore`. `Attachments:Provider` picks `Local` (the gitignored folder `App_Data/attachments` under the Web project) or `AzureBlob` (`BlobServiceUri` + `ContainerName`). Blob access uses `DefaultAzureCredential`, which is the App Service managed identity in Azure. The container is created private, and images are served only by `GET /attachments/{id}` with `nosniff` and a sandbox CSP. That endpoint must require sign-in once auth exists.
+  - **Cleanup:** deleting a subtask or project deletes its attachment rows and then, best effort, the stored bytes. Removing an image from the Markdown text doesn't delete the upload.
 - **Changing the model:** add a migration (see Common commands). The test `Migrations_MatchTheModel` fails if you forget.
 
 ## Code conventions
@@ -141,5 +147,8 @@ Dev URLs (from `launchSettings.json`): http://localhost:5070, https://localhost:
 - Project management UI: Phases 1-3 are done.
   - Done so far: the data layer; the `/projects` board (drag and drop, editor dialog, Work/Personal filter, archive); the project page `/projects/{id}` (header, subtask board, Markdown description, links, work log); and the subtask side panel.
   - The side panel opens from a subtask card and lives in the query string (`?subtask={id}`, replacing the history entry), so it can be linked to. It has a status switch, dates, description, the subtask's links and its work log. It takes its data from the page's project load, which already includes subtask notes and links.
-  - Still to build: image attachments in Markdown descriptions (Azure Blob Storage behind an `IAttachmentStore`, private container served through the app), and wiring the dashboard Projects and Due Today cards to `IProjectService`
-- Azure deployment pipeline (GitHub Actions to App Service)
+  - Image attachments in descriptions are done too.
+  - Still to build: wiring the dashboard Projects and Due Today cards to `IProjectService`
+- Azure deployment pipeline (GitHub Actions to App Service). Production needs:
+  - a storage account with the App Service's managed identity granted *Storage Blob Data Contributor*
+  - `Attachments:Provider=AzureBlob` and `Attachments:BlobServiceUri`
