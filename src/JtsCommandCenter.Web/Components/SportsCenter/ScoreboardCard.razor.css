@@ -221,6 +221,16 @@
     font-size: 0.78rem;
 }
 
+/* Baseball: probable starting pitchers before first pitch. */
+.probables {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    color: var(--cc-text);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+}
+
 .meta {
     display: flex;
     flex-direction: column;

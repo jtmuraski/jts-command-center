@@ -16,7 +16,7 @@
         @if (scoreboard is not null)
         {
             <div class="pager">
-                <button class="cc-btn cc-btn-ghost page-btn" type="button" aria-label="Previous week"
+                <button class="cc-btn cc-btn-ghost page-btn" type="button" aria-label="@($"Previous {Unit}")"
                         disabled="@(scoreboard.Previous is null || loading)" @onclick="() => GoToAsync(scoreboard.Previous)">
                     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
                 </button>
@@ -24,14 +24,14 @@
                     <span class="week-label">@scoreboard.Week.Label</span>
                     <span class="week-dates">@WeekDates(scoreboard.Week)</span>
                 </div>
-                <button class="cc-btn cc-btn-ghost page-btn" type="button" aria-label="Next week"
+                <button class="cc-btn cc-btn-ghost page-btn" type="button" aria-label="@($"Next {Unit}")"
                         disabled="@(scoreboard.Next is null || loading)" @onclick="() => GoToAsync(scoreboard.Next)">
                     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
                 </button>
             </div>
             @if (selected is not null)
             {
-                <button class="this-week" type="button" @onclick="() => GoToAsync(null)" disabled="@loading">Back to this week</button>
+                <button class="this-week" type="button" @onclick="() => GoToAsync(null)" disabled="@loading">@(scoreboard.Week.IsDay ? "Back to today" : "Back to this week")</button>
             }
 
             @if (pinnedGames.Count > 0 || pinnedByes.Count > 0)
@@ -62,13 +62,17 @@
 
             @if (scoreboard.Games.Count == 0)
             {
-                <p class="note">No games this week.</p>
+                <p class="note">@(scoreboard.Week.IsDay ? "No games on this day." : "No games this week.")</p>
             }
 
             @foreach (var day in scoreboard.Games.GroupBy(g => g.Start.Date))
             {
                 <section class="day">
-                    <h3 class="day-label">@day.Key.ToString("dddd, MMM d")</h3>
+                    @* A day page needs no day headings; the pager already names the day. *@
+                    @if (!scoreboard.Week.IsDay)
+                    {
+                        <h3 class="day-label">@day.Key.ToString("dddd, MMM d")</h3>
+                    }
                     <div class="games">
                         @foreach (var game in day)
                         {
@@ -86,13 +90,13 @@
             <div class="footer">
                 @if (error is not null)
                 {
-                    <span class="stale">Couldn't load that week · showing @scoreboard.Week.Label</span>
+                    <span class="stale">Couldn't load that @Unit · showing @PageName(scoreboard.Week)</span>
                 }
                 else
                 {
                     <span>As of @scoreboard.UpdatedAt.ToString("h:mm tt")</span>
                 }
-                <a href="https://www.espn.com/@League/scoreboard" target="_blank" rel="noopener">ESPN</a>
+                <a href="@EspnLink(scoreboard.Week)" target="_blank" rel="noopener">ESPN</a>
             </div>
         }
         else if (error is not null)
@@ -116,19 +120,22 @@
 @code {
     private static readonly TimeSpan Tick = TimeSpan.FromMinutes(1);
 
-    /// <summary>ESPN league slug, matching a key under SportsCenter:Leagues ("nfl").</summary>
+    /// <summary>ESPN league slug, matching a key under SportsCenter:Leagues ("nfl", "mlb", "nhl").</summary>
     [Parameter, EditorRequired] public string League { get; set; } = string.Empty;
 
     /// <summary>Route prefix for a game's detail page ("sports/football/game"); tiles link to "{prefix}/{id}". Null for no links.</summary>
     [Parameter] public string? GameLinkBase { get; set; }
 
-    /// <summary>The hosting page's route ("sports/football"); when set, paging keeps the week in its query string.</summary>
+    /// <summary>The hosting page's route ("sports/football"); when set, paging keeps the week or day in its query string.</summary>
     [Parameter] public string? PagePath { get; set; }
 
     /// <summary>Week to open on (from the page's query string); ESPN's current week when null.</summary>
     [Parameter] public int? InitialSeasonType { get; set; }
 
     [Parameter] public int? InitialWeek { get; set; }
+
+    /// <summary>Day to open on, for leagues that page by day; ESPN's current day when null.</summary>
+    [Parameter] public DateOnly? InitialDate { get; set; }
 
     private readonly CancellationTokenSource cts = new();
     private WeekScoreboard? scoreboard;
@@ -143,8 +150,12 @@
     private List<string> PinnedTeams =>
         Options.Value.Leagues.TryGetValue(League, out var league) ? league.PinnedTeams : [];
 
+    private string Unit => scoreboard?.Week.IsDay == true ? "day" : "week";
+
     protected override Task OnInitializedAsync() =>
-        LoadAsync(InitialSeasonType is int type && InitialWeek is int week ? new WeekRef(type, week, "", default, default) : null);
+        LoadAsync(InitialDate is DateOnly day ? WeekRef.ForDay(day)
+            : InitialSeasonType is int type && InitialWeek is int week ? new WeekRef(type, week, "", default, default)
+            : null);
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -188,10 +199,14 @@
     {
         await LoadAsync(week);
 
-        // Keep the week in the URL so the back button from a game page returns here.
+        // Keep the week or day in the URL so the back button from a game page returns here.
         if (PagePath is not null && error is null)
         {
-            Navigation.NavigateTo(selected is null ? PagePath : $"{PagePath}?type={selected.SeasonType}&week={selected.Week}", replace: true);
+            Navigation.NavigateTo(
+                selected is null ? PagePath
+                : selected.IsDay ? $"{PagePath}?date={selected.Start:yyyy-MM-dd}"
+                : $"{PagePath}?type={selected.SeasonType}&week={selected.Week}",
+                replace: true);
         }
     }
 
@@ -212,8 +227,8 @@
                 currentWeek ??= (await Scoreboards.GetWeekAsync(League, null, cts.Token)).Week;
             }
 
-            // Paging back to the week ESPN considers current is the same as "this week".
-            selected = week is null || result.Week == currentWeek ? null : week;
+            // Paging back to the week (or day) ESPN considers current is the same as "this week".
+            selected = week is null || (currentWeek is not null && result.Week.SamePage(currentWeek)) ? null : result.Week;
             scoreboard = result;
             pinnedGames = result.Games.Where(g => g.Involves(PinnedTeams)).ToList();
             pinnedByes = result.TeamsOnBye.Where(t => PinnedTeams.Contains(t.Abbreviation, StringComparer.OrdinalIgnoreCase)).ToList();
@@ -271,6 +286,13 @@
                     break;
             }
         </div>
+        @if (game.State == GameState.Scheduled && (game.Away.Probable is not null || game.Home.Probable is not null))
+        {
+            <div class="probables" title="Probable starting pitchers">
+                <span>@game.Away.Abbreviation: @(game.Away.Probable ?? "TBD")</span>
+                <span>@game.Home.Abbreviation: @(game.Home.Probable ?? "TBD")</span>
+            </div>
+        }
         @if (game.Venue is not null || game.Note is not null)
         {
             <div class="meta">
@@ -312,8 +334,14 @@
 
     private static string WeekDates(WeekRef week) =>
         week.Start == default ? ""
+        : week.Start == week.End ? week.Start.ToString("MMM d")
         : week.Start.Month == week.End.Month ? $"{week.Start:MMM d}–{week.End.Day}"
         : $"{week.Start:MMM d} – {week.End:MMM d}";
+
+    private static string PageName(WeekRef week) => week.IsDay ? week.Start.ToString("ddd, MMM d") : week.Label;
+
+    private string EspnLink(WeekRef week) =>
+        $"https://www.espn.com/{League}/scoreboard" + (week.IsDay ? $"/_/date/{week.Start:yyyyMMdd}" : "");
 
     public void Dispose()
     {

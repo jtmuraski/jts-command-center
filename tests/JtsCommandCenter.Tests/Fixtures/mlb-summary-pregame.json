@@ -1,0 +1,475 @@
+{
+ "header": {
+  "id": "401908042",
+  "season": {
+   "year": 2026,
+   "current": true,
+   "type": 3
+  },
+  "gameNote": "World Series - Game 1",
+  "competitions": [
+   {
+    "date": "2026-10-24T00:00Z",
+    "status": {
+     "type": {
+      "state": "pre",
+      "completed": false,
+      "description": "Scheduled",
+      "shortDetail": "10/23 - 8:00 PM EDT"
+     }
+    },
+    "competitors": [
+     {
+      "homeAway": "home",
+      "team": {
+       "id": "8",
+       "abbreviation": "MIL",
+       "displayName": "Milwaukee Brewers",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500-dark/mil.png",
+         "rel": [
+          "full",
+          "dark"
+         ]
+        }
+       ]
+      },
+      "record": [
+       {
+        "type": "total",
+        "summary": "103-59",
+        "displayValue": "103-59"
+       }
+      ],
+      "probables": [
+       {
+        "athlete": {
+         "displayName": "Jacob Misiorowski",
+         "shortName": "J. Misiorowski"
+        },
+        "statistics": {
+         "splits": {
+          "categories": [
+           {
+            "name": "strikeouts",
+            "abbreviation": "K",
+            "value": 11.0,
+            "displayValue": "11"
+           },
+           {
+            "name": "losses",
+            "abbreviation": "L",
+            "value": 0.0,
+            "displayValue": "0"
+           },
+           {
+            "name": "hits",
+            "abbreviation": "H",
+            "value": 9.0,
+            "displayValue": "9"
+           },
+           {
+            "name": "walks",
+            "abbreviation": "BB",
+            "value": 4.0,
+            "displayValue": "4"
+           },
+           {
+            "name": "homeRuns",
+            "abbreviation": "HR",
+            "value": 0.0,
+            "displayValue": "0"
+           },
+           {
+            "name": "wins",
+            "abbreviation": "W",
+            "value": 0.0,
+            "displayValue": "0"
+           },
+           {
+            "name": "fullInnings",
+            "abbreviation": "FI",
+            "value": 8.0,
+            "displayValue": "8"
+           },
+           {
+            "name": "partInnings",
+            "abbreviation": "PI",
+            "value": 1.0,
+            "displayValue": "1"
+           },
+           {
+            "name": "ERA",
+            "abbreviation": "ERA",
+            "value": 3.24,
+            "displayValue": "3.24"
+           },
+           {
+            "name": "WHIP",
+            "abbreviation": "WHIP",
+            "value": 1.56,
+            "displayValue": "1.56"
+           }
+          ]
+         }
+        }
+       }
+      ]
+     },
+     {
+      "homeAway": "away",
+      "team": {
+       "id": "30",
+       "abbreviation": "TB",
+       "displayName": "Tampa Bay Rays",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500-dark/tb.png",
+         "rel": [
+          "full",
+          "dark"
+         ]
+        }
+       ]
+      },
+      "record": [
+       {
+        "type": "total",
+        "summary": "98-64",
+        "displayValue": "98-64"
+       }
+      ],
+      "probables": [
+       {
+        "athlete": {
+         "displayName": "Nick Martinez",
+         "shortName": "N. Martinez"
+        },
+        "statistics": {
+         "splits": {
+          "categories": [
+           {
+            "name": "strikeouts",
+            "abbreviation": "K",
+            "value": 6.0,
+            "displayValue": "6"
+           },
+           {
+            "name": "losses",
+            "abbreviation": "L",
+            "value": 0.0,
+            "displayValue": "0"
+           },
+           {
+            "name": "hits",
+            "abbreviation": "H",
+            "value": 7.0,
+            "displayValue": "7"
+           },
+           {
+            "name": "walks",
+            "abbreviation": "BB",
+            "value": 3.0,
+            "displayValue": "3"
+           },
+           {
+            "name": "homeRuns",
+            "abbreviation": "HR",
+            "value": 0.0,
+            "displayValue": "0"
+           },
+           {
+            "name": "wins",
+            "abbreviation": "W",
+            "value": 1.0,
+            "displayValue": "1"
+           },
+           {
+            "name": "fullInnings",
+            "abbreviation": "FI",
+            "value": 9.0,
+            "displayValue": "9"
+           },
+           {
+            "name": "partInnings",
+            "abbreviation": "PI",
+            "value": 0.0,
+            "displayValue": "0"
+           },
+           {
+            "name": "ERA",
+            "abbreviation": "ERA",
+            "value": 3.0,
+            "displayValue": "3.00"
+           },
+           {
+            "name": "WHIP",
+            "abbreviation": "WHIP",
+            "value": 1.1111,
+            "displayValue": "1.11"
+           }
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "series": [
+     {
+      "type": "season",
+      "summary": "MIL wins series 2-1"
+     },
+     {
+      "type": "playoff",
+      "summary": ""
+     }
+    ]
+   }
+  ]
+ },
+ "boxscore": {
+  "teams": [
+   {
+    "team": {
+     "abbreviation": "TB"
+    },
+    "homeAway": "away",
+    "statistics": [
+     {
+      "name": "batting",
+      "stats": [
+       {
+        "name": "homeRuns",
+        "displayValue": "169"
+       },
+       {
+        "name": "avg",
+        "displayValue": ".258"
+       }
+      ]
+     },
+     {
+      "name": "pitching",
+      "stats": [
+       {
+        "name": "homeRuns",
+        "displayValue": "201"
+       },
+       {
+        "name": "ERA",
+        "displayValue": "3.70"
+       }
+      ]
+     },
+     {
+      "name": "fielding",
+      "stats": [
+       {
+        "name": "errors",
+        "displayValue": "92"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "team": {
+     "abbreviation": "MIL"
+    },
+    "homeAway": "home",
+    "statistics": [
+     {
+      "name": "batting",
+      "stats": [
+       {
+        "name": "homeRuns",
+        "displayValue": "154"
+       },
+       {
+        "name": "avg",
+        "displayValue": ".258"
+       }
+      ]
+     },
+     {
+      "name": "pitching",
+      "stats": [
+       {
+        "name": "homeRuns",
+        "displayValue": "171"
+       },
+       {
+        "name": "ERA",
+        "displayValue": "3.51"
+       }
+      ]
+     },
+     {
+      "name": "fielding",
+      "stats": [
+       {
+        "name": "errors",
+        "displayValue": "72"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "gameInfo": {
+  "venue": {
+   "fullName": "American Family Field",
+   "address": {
+    "city": "Milwaukee",
+    "state": "Wisconsin"
+   }
+  },
+  "officials": []
+ },
+ "predictor": {
+  "homeTeam": {
+   "gameProjection": "72.7"
+  },
+  "awayTeam": {
+   "gameProjection": "27.3"
+  }
+ },
+ "pickcenter": [
+  {
+   "provider": {
+    "name": "DraftKings"
+   },
+   "details": "MIL -194",
+   "overUnder": 6.5,
+   "awayTeamOdds": {
+    "moneyLine": 159
+   },
+   "homeTeamOdds": {
+    "moneyLine": -194
+   }
+  }
+ ],
+ "lastFiveGames": [
+  {
+   "team": {
+    "abbreviation": "MIL"
+   },
+   "events": [
+    {
+     "gameResult": "W",
+     "score": "3-1",
+     "atVs": "@",
+     "opponent": {
+      "abbreviation": "SD"
+     }
+    },
+    {
+     "gameResult": "W",
+     "score": "2-1",
+     "atVs": "vs",
+     "opponent": {
+      "abbreviation": "LAD"
+     }
+    }
+   ]
+  },
+  {
+   "team": {
+    "abbreviation": "TB"
+   },
+   "events": [
+    {
+     "gameResult": "W",
+     "score": "3-1",
+     "atVs": "vs",
+     "opponent": {
+      "abbreviation": "CLE"
+     }
+    },
+    {
+     "gameResult": "L",
+     "score": "3-2",
+     "atVs": "@",
+     "opponent": {
+      "abbreviation": "CLE"
+     }
+    }
+   ]
+  }
+ ],
+ "leaders": [
+  {
+   "team": {
+    "abbreviation": "MIL"
+   },
+   "leaders": [
+    {
+     "displayName": "Batting Average",
+     "leaders": [
+      {
+       "displayValue": ".291",
+       "athlete": {
+        "displayName": "Jackson Chourio",
+        "position": {
+         "abbreviation": "LF"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "displayName": "Home Runs",
+     "leaders": [
+      {
+       "displayValue": "26",
+       "athlete": {
+        "displayName": "Jake Bauers",
+        "position": {
+         "abbreviation": "1B"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "team": {
+    "abbreviation": "TB"
+   },
+   "leaders": [
+    {
+     "displayName": "Batting Average",
+     "leaders": [
+      {
+       "displayValue": ".306",
+       "athlete": {
+        "displayName": "Chandler Simpson",
+        "position": {
+         "abbreviation": "LF"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "displayName": "Home Runs",
+     "leaders": [
+      {
+       "displayValue": "42",
+       "athlete": {
+        "displayName": "Junior Caminero",
+        "position": {
+         "abbreviation": "3B"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

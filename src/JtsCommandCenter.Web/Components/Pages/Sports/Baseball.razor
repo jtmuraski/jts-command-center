@@ -2,11 +2,10 @@
 
 <PageTitle>Baseball · Command Center</PageTitle>
 
-<header class="sports-header">
-    <h1>Baseball</h1>
-    <p class="cc-muted">MLB scores, schedule, and news.</p>
-</header>
+<LeaguePage League="mlb" PagePath="sports/baseball" Title="Baseball" Description="MLB scores, schedule, and news."
+            InitialDate="Date" />
 
-<div class="cc-card">
-    <p class="cc-muted">The Baseball page is coming soon. It will follow the Football page: MLB news, a Twins news section, and the league scoreboard.</p>
-</div>
+@code {
+    /// <summary>Scoreboard day to open on, e.g. ?date=2026-10-23 (set by paging and by game pages' back link).</summary>
+    [SupplyParameterFromQuery] public DateOnly? Date { get; set; }
+}

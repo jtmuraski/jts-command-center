@@ -15,6 +15,8 @@ public class EspnScoreboardServiceTests
     {
         var options = new SportsCenterOptions();
         options.Leagues["nfl"] = new LeagueOptions { Name = "NFL", Sport = "football", League = "nfl" };
+        options.Leagues["mlb"] = new LeagueOptions { Name = "MLB", Sport = "baseball", League = "mlb" };
+        options.Leagues["nhl"] = new LeagueOptions { Name = "NHL", Sport = "hockey", League = "nhl" };
 
         return new EspnScoreboardService(
             handler.CreateClient(),
@@ -139,5 +141,133 @@ public class EspnScoreboardServiceTests
         Assert.Equal(7, current.Week.Week);
         Assert.Equal(6, previous.Week.Week);
         Assert.Equal(2, handler.Requests.Count);
+    }
+
+    // ---- Leagues that page by day (baseball, hockey) ------------------------------------------------
+
+    private static string ProbableCompetitor(string homeAway, string abbreviation, string pitcher, string record) => $$"""
+        {
+          "homeAway": "{{homeAway}}",
+          "team": { "abbreviation": "{{abbreviation}}", "displayName": "{{abbreviation}} Team", "shortDisplayName": "{{abbreviation}}" },
+          "probables": [ { "athlete": { "shortName": "{{pitcher}}" }, "record": "{{record}}" } ]
+        }
+        """;
+
+    private static string BaseballGame(string id, string date) => $$"""
+        {
+          "id": "{{id}}",
+          "date": "{{date}}",
+          "competitions": [ {
+            "notes": [ { "headline": "World Series - Game 1" } ],
+            "status": { "type": { "state": "pre", "completed": false, "shortDetail": "10/23 - 8:00 PM EDT" } },
+            "competitors": [
+              {{ProbableCompetitor("home", "MIL", "J. Misiorowski", "(0-0, 3.24)")}},
+              {{ProbableCompetitor("away", "TB", "N. Martinez", "(1-0, 3.00)")}}
+            ]
+          } ]
+        }
+        """;
+
+    // A dated request has no top-level "season" or "day"; the current one has both.
+    private const string CurrentDay = """ "season": { "type": 3, "year": 2026 }, "day": { "date": "2026-10-23" }, """;
+
+    private static string Day(string calendar, bool current, params string[] games) => $$"""
+        {
+          {{(current ? CurrentDay : "")}}
+          "leagues": [ {
+            "season": { "year": 2026, "type": { "type": 3 } },
+            {{calendar}}
+          } ],
+          "events": [ {{string.Join(",", games)}} ]
+        }
+        """;
+
+    // Baseball lists the days without games between the calendar's start and end.
+    private const string BaseballCalendar = """
+        "calendarType": "day", "calendarIsWhitelist": false,
+        "calendarStartDate": "2026-10-20T07:00Z", "calendarEndDate": "2026-10-27T06:59Z",
+        "calendar": [ "2026-10-22T07:00Z", "2026-10-25T07:00Z" ]
+        """;
+
+    // Hockey lists the days that have games.
+    private static string HockeyGame(string id, string date) => $$"""
+        {
+          "id": "{{id}}",
+          "date": "{{date}}",
+          "competitions": [ {
+            "status": { "type": { "state": "post", "completed": true, "shortDetail": "Final" } },
+            "competitors": [
+              { "homeAway": "home", "score": "2", "winner": true, "team": { "abbreviation": "CGY", "shortDisplayName": "Flames" },
+                "records": [ { "type": "ytd", "summary": "3-6-0" }, { "type": "home", "summary": "2-3-0" } ] },
+              { "homeAway": "away", "score": "1", "team": { "abbreviation": "MIN", "shortDisplayName": "Wild" },
+                "records": [ { "type": "ytd", "summary": "4-4-2" } ] }
+            ]
+          } ]
+        }
+        """;
+
+    private const string HockeyCalendar = """
+        "calendarType": "day", "calendarIsWhitelist": true,
+        "calendar": [ "2026-10-20T07:00Z", "2026-10-22T07:00Z", "2026-10-24T07:00Z" ]
+        """;
+
+    [Fact]
+    public async Task DailyLeague_CurrentDayPagesThroughGameDays()
+    {
+        var handler = new FakeHttpHandler().Json("baseball/mlb/scoreboard", Day(BaseballCalendar, current: true,
+            BaseballGame("401908042", "2026-10-24T00:00Z")));
+
+        var day = await CreateService(handler).GetWeekAsync("mlb");
+
+        Assert.Equal(WeekRef.ForDay(new DateOnly(2026, 10, 23)), day.Week);
+        Assert.True(day.Week.IsDay);
+        Assert.Equal(2026, day.Season);
+
+        // Every day from the 20th through the 26th except the two listed off days.
+        Assert.Equal([20, 21, 23, 24, 26], day.Weeks.Select(w => w.Start.Day));
+        Assert.Equal(new DateOnly(2026, 10, 21), day.Previous!.Start);
+        Assert.Equal(new DateOnly(2026, 10, 24), day.Next!.Start);
+
+        var game = Assert.Single(day.Games);
+        Assert.Equal(new DateTime(2026, 10, 23, 19, 0, 0), game.Start);
+        Assert.Equal("World Series - Game 1", game.Note);
+        Assert.Equal("N. Martinez (1-0, 3.00)", game.Away.Probable);
+        Assert.Equal("J. Misiorowski (0-0, 3.24)", game.Home.Probable);
+        Assert.Empty(day.TeamsOnBye);
+    }
+
+    [Fact]
+    public async Task DailyLeague_RequestedDayUsesDatesAndIsCachedByDay()
+    {
+        var handler = new FakeHttpHandler().Json("hockey/nhl/scoreboard?dates=20261022", Day(HockeyCalendar, current: false,
+            HockeyGame("401892560", "2026-10-23T01:00Z")));
+        var service = CreateService(handler);
+
+        var day = await service.GetWeekAsync("nhl", WeekRef.ForDay(new DateOnly(2026, 10, 22)));
+        await service.GetWeekAsync("nhl", WeekRef.ForDay(new DateOnly(2026, 10, 22)));
+
+        Assert.Single(handler.Requests);
+        Assert.Equal(new DateOnly(2026, 10, 22), day.Week.Start);
+        Assert.Equal(2026, day.Season); // from the league, since a dated response has no top-level season
+        Assert.Equal([20, 22, 24], day.Weeks.Select(w => w.Start.Day));
+        Assert.Equal(new DateOnly(2026, 10, 20), day.Previous!.Start);
+
+        // Hockey's overall record is typed "ytd".
+        var game = Assert.Single(day.Games);
+        Assert.Equal(("4-4-2", "3-6-0"), (game.Away.Record, game.Home.Record));
+        Assert.Equal((1, 2), (game.Away.Score, game.Home.Score));
+        Assert.Null(game.Home.Probable);
+        Assert.True(day.IsComplete);
+    }
+
+    [Fact]
+    public async Task DailyLeague_ShownDayIsPageableEvenWhenMissingFromCalendar()
+    {
+        var handler = new FakeHttpHandler().Json("dates=20261023", Day(HockeyCalendar, current: false));
+
+        var day = await CreateService(handler).GetWeekAsync("nhl", WeekRef.ForDay(new DateOnly(2026, 10, 23)));
+
+        Assert.Equal([20, 22, 23, 24], day.Weeks.Select(w => w.Start.Day));
+        Assert.Equal(new DateOnly(2026, 10, 24), day.Next!.Start);
     }
 }

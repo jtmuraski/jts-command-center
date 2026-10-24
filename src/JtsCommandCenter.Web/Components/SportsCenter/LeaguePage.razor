@@ -1,0 +1,108 @@
+@* A Sports Center league page: the scoreboard, focus-team news, and league news. The routable pages
+   (Football, Baseball, Hockey) pass in the league and the scoreboard page from their query string. *@
+@implements IDisposable
+@inject ISportsNewsService NewsService
+@inject ILogger<LeaguePage> Logger
+
+<header class="sports-header">
+    <h1>@Title</h1>
+    <p class="cc-muted">@Description</p>
+</header>
+
+<div class="sports-page">
+    <div class="slot slot-games">
+        <ScoreboardCard League="@League" PagePath="@PagePath" GameLinkBase="@($"{PagePath}/game")"
+                        InitialSeasonType="InitialSeasonType" InitialWeek="InitialWeek" InitialDate="InitialDate" />
+    </div>
+
+    <div class="slot slot-team">
+        <DashboardCard Title="@($"{news?.TeamName ?? "Team"} news")">
+            <ChildContent>
+                @if (news is not null)
+                {
+                    <NewsList Articles="news.TeamNews" ShowSummaries="false" EmptyText="No team stories right now." />
+                }
+                else
+                {
+                    @NewsState
+                }
+            </ChildContent>
+        </DashboardCard>
+    </div>
+
+    <div class="slot slot-news">
+        <DashboardCard Title="@($"{news?.LeagueName ?? "League"} news")">
+            <ChildContent>
+                @if (news is not null)
+                {
+                    <NewsList Articles="news.Headlines" />
+                    @if (news.FailedSources.Count > 0)
+                    {
+                        <p class="sources-note">Couldn't reach @string.Join(", ", news.FailedSources) this time.</p>
+                    }
+                }
+                else
+                {
+                    @NewsState
+                }
+            </ChildContent>
+        </DashboardCard>
+    </div>
+</div>
+
+@code {
+    /// <summary>ESPN league slug, matching a key under SportsCenter:Leagues ("nfl", "mlb", "nhl").</summary>
+    [Parameter, EditorRequired] public string League { get; set; } = string.Empty;
+
+    /// <summary>The page's route ("sports/football"); game pages live under "{PagePath}/game".</summary>
+    [Parameter, EditorRequired] public string PagePath { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Football scoreboard week to open on (?type=2&amp;week=5).</summary>
+    [Parameter] public int? InitialSeasonType { get; set; }
+
+    [Parameter] public int? InitialWeek { get; set; }
+
+    /// <summary>Scoreboard day to open on, for leagues that page by day (?date=2026-10-23).</summary>
+    [Parameter] public DateOnly? InitialDate { get; set; }
+
+    private readonly CancellationTokenSource cts = new();
+    private LeagueNews? news;
+    private string? error;
+
+    private RenderFragment NewsState => error is null
+        ? @<p class="cc-muted state">Loading stories…</p>
+        : @<div class="state">
+              <p class="cc-muted">News is unavailable right now.</p>
+              <button class="cc-btn cc-btn-ghost" type="button" @onclick="LoadNewsAsync">Try again</button>
+          </div>;
+
+    protected override Task OnInitializedAsync() => LoadNewsAsync();
+
+    private async Task LoadNewsAsync()
+    {
+        try
+        {
+            news = await NewsService.GetNewsAsync(League, cts.Token);
+            error = null;
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // Navigated away mid-request.
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to load {League} news", League);
+            error = ex.Message;
+        }
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}

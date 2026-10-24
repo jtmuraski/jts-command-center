@@ -1,5 +1,5 @@
 @* Win probability over the course of a game: the away team's chance rises toward the top, the home
-   team's toward the bottom, with 50% through the middle and a divider at each new quarter. *@
+   team's toward the bottom, with 50% through the middle and a divider at each new quarter (or inning). *@
 
 @if (Points.Count > 1)
 {
@@ -51,6 +51,9 @@
 
     [Parameter] public bool IsFinal { get; set; }
 
+    /// <summary>Label for a period on the time axis, e.g. "Q2" or "7th".</summary>
+    [Parameter, EditorRequired] public Func<int, string> PeriodLabel { get; set; } = period => period.ToString();
+
     private sealed record Divider(double X, string Label);
 
     private string linePath = "";
@@ -92,12 +95,7 @@
         return (int)Math.Round(100.0 * trailing / Points.Count);
     }
 
-    private static string Label(int period) => period switch
-    {
-        <= 4 => $"Q{Math.Max(period, 1)}",
-        5 => "OT",
-        _ => $"OT{period - 4}"
-    };
+    private string Label(int period) => PeriodLabel(period);
 
     private static string Percent(double x) => (x / Width * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "%";
 

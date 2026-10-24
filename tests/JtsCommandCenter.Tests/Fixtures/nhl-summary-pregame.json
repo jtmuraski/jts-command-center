@@ -1,0 +1,389 @@
+{
+ "header": {
+  "id": "401892564",
+  "season": {
+   "year": 2027,
+   "current": true,
+   "type": 2
+  },
+  "competitions": [
+   {
+    "date": "2026-10-24T00:00Z",
+    "status": {
+     "type": {
+      "state": "pre",
+      "completed": false,
+      "description": "Scheduled",
+      "shortDetail": "10/23 - 8:00 PM EDT"
+     }
+    },
+    "competitors": [
+     {
+      "homeAway": "home",
+      "team": {
+       "id": "4",
+       "abbreviation": "CHI",
+       "displayName": "Chicago Blackhawks",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nhl/500-dark/chi.png",
+         "rel": [
+          "full",
+          "dark"
+         ]
+        }
+       ]
+      },
+      "record": [
+       {
+        "type": "total",
+        "summary": "3-6-0",
+        "displayValue": "3-6-0, 6 PTS"
+       }
+      ]
+     },
+     {
+      "homeAway": "away",
+      "team": {
+       "id": "10",
+       "abbreviation": "MTL",
+       "displayName": "Montreal Canadiens",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nhl/500-dark/mtl.png",
+         "rel": [
+          "full",
+          "dark"
+         ]
+        }
+       ]
+      },
+      "record": [
+       {
+        "type": "total",
+        "summary": "4-3-2",
+        "displayValue": "4-3-2, 10 PTS"
+       }
+      ]
+     }
+    ],
+    "series": [
+     {
+      "type": "season",
+      "summary": "Series starts 10/23"
+     }
+    ]
+   }
+  ]
+ },
+ "boxscore": {
+  "teams": [
+   {
+    "team": {
+     "abbreviation": "MTL"
+    },
+    "homeAway": "away",
+    "statistics": [
+     {
+      "name": "avgGoalsAgainst",
+      "label": "Goals Against Average",
+      "displayValue": "3.78"
+     },
+     {
+      "name": "avgGoals",
+      "label": "Goals For per Game",
+      "displayValue": "3.11"
+     },
+     {
+      "name": "powerPlayPct",
+      "label": "Power Play Percentage",
+      "displayValue": "13.8"
+     }
+    ]
+   },
+   {
+    "team": {
+     "abbreviation": "CHI"
+    },
+    "homeAway": "home",
+    "statistics": [
+     {
+      "name": "avgGoalsAgainst",
+      "label": "Goals Against Average",
+      "displayValue": "4.00"
+     },
+     {
+      "name": "avgGoals",
+      "label": "Goals For per Game",
+      "displayValue": "2.33"
+     },
+     {
+      "name": "powerPlayPct",
+      "label": "Power Play Percentage",
+      "displayValue": "12.5"
+     }
+    ]
+   }
+  ]
+ },
+ "gameInfo": {
+  "venue": {
+   "fullName": "United Center",
+   "address": {
+    "city": "Chicago",
+    "state": "IL",
+    "country": "USA"
+   }
+  },
+  "officials": []
+ },
+ "goalies": {
+  "awayTeam": {
+   "teamId": "10",
+   "athletes": [
+    {
+     "displayName": "Jakub Dobes",
+     "jersey": "75",
+     "statistics": [
+      {
+       "name": "avgGoalsAgainst",
+       "abbreviation": "GAA",
+       "displayValue": "4.47"
+      },
+      {
+       "name": "shutouts",
+       "abbreviation": "SO",
+       "displayValue": "0"
+      },
+      {
+       "name": "savePct",
+       "abbreviation": "SV%",
+       "displayValue": ".847"
+      },
+      {
+       "name": "overtimeLosses",
+       "abbreviation": "OTL",
+       "displayValue": "2"
+      },
+      {
+       "name": "games",
+       "abbreviation": "GP",
+       "displayValue": "5"
+      },
+      {
+       "name": "wins",
+       "abbreviation": "WINS",
+       "displayValue": "1"
+      },
+      {
+       "name": "losses",
+       "abbreviation": "L",
+       "displayValue": "2"
+      },
+      {
+       "name": "wins",
+       "abbreviation": "W",
+       "displayValue": "1.0"
+      },
+      {
+       "name": "losses",
+       "abbreviation": "L",
+       "displayValue": "2.0"
+      }
+     ]
+    }
+   ]
+  },
+  "homeTeam": {
+   "teamId": "4",
+   "athletes": [
+    {
+     "displayName": "Spencer Knight",
+     "jersey": "30",
+     "statistics": [
+      {
+       "name": "avgGoalsAgainst",
+       "abbreviation": "GAA",
+       "displayValue": "3.59"
+      },
+      {
+       "name": "shutouts",
+       "abbreviation": "SO",
+       "displayValue": "0"
+      },
+      {
+       "name": "savePct",
+       "abbreviation": "SV%",
+       "displayValue": ".888"
+      },
+      {
+       "name": "overtimeLosses",
+       "abbreviation": "OTL",
+       "displayValue": "0"
+      },
+      {
+       "name": "games",
+       "abbreviation": "GP",
+       "displayValue": "7"
+      },
+      {
+       "name": "wins",
+       "abbreviation": "WINS",
+       "displayValue": "3"
+      },
+      {
+       "name": "losses",
+       "abbreviation": "L",
+       "displayValue": "4"
+      },
+      {
+       "name": "wins",
+       "abbreviation": "W",
+       "displayValue": "3.0"
+      },
+      {
+       "name": "losses",
+       "abbreviation": "L",
+       "displayValue": "4.0"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "pickcenter": [
+  {
+   "provider": {
+    "name": "DraftKings"
+   },
+   "details": "MTL -170",
+   "overUnder": 6.5,
+   "awayTeamOdds": {
+    "moneyLine": -170
+   },
+   "homeTeamOdds": {
+    "moneyLine": 142
+   }
+  }
+ ],
+ "lastFiveGames": [
+  {
+   "team": {
+    "abbreviation": "CHI"
+   },
+   "events": [
+    {
+     "gameResult": "L",
+     "score": "4-1",
+     "atVs": "@",
+     "opponent": {
+      "abbreviation": "NYI"
+     }
+    },
+    {
+     "gameResult": "L",
+     "score": "5-2",
+     "atVs": "vs",
+     "opponent": {
+      "abbreviation": "CAR"
+     }
+    }
+   ]
+  },
+  {
+   "team": {
+    "abbreviation": "MTL"
+   },
+   "events": [
+    {
+     "gameResult": "W",
+     "score": "1-0 SO",
+     "atVs": "vs",
+     "opponent": {
+      "abbreviation": "DET"
+     }
+    },
+    {
+     "gameResult": "W",
+     "score": "4-3 SO",
+     "atVs": "vs",
+     "opponent": {
+      "abbreviation": "BUF"
+     }
+    }
+   ]
+  }
+ ],
+ "leaders": [
+  {
+   "team": {
+    "abbreviation": "CHI"
+   },
+   "leaders": [
+    {
+     "displayName": "Goals",
+     "leaders": [
+      {
+       "displayValue": "3",
+       "athlete": {
+        "displayName": "Frank Nazar",
+        "position": {
+         "abbreviation": "C"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "displayName": "Assists",
+     "leaders": [
+      {
+       "displayValue": "5",
+       "athlete": {
+        "displayName": "Anton Frondell",
+        "position": {
+         "abbreviation": "C"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "team": {
+    "abbreviation": "MTL"
+   },
+   "leaders": [
+    {
+     "displayName": "Goals",
+     "leaders": [
+      {
+       "displayValue": "6",
+       "athlete": {
+        "displayName": "Cole Caufield",
+        "position": {
+         "abbreviation": "RW"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "displayName": "Assists",
+     "leaders": [
+      {
+       "displayValue": "7",
+       "athlete": {
+        "displayName": "Nick Suzuki",
+        "position": {
+         "abbreviation": "C"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

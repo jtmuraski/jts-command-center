@@ -1,0 +1,7 @@
+@page "/sports/baseball/game/{EventId}"
+
+<GamePage League="mlb" PagePath="sports/baseball" LeagueTitle="Baseball" EventId="@EventId" />
+
+@code {
+    [Parameter] public string EventId { get; set; } = string.Empty;
+}

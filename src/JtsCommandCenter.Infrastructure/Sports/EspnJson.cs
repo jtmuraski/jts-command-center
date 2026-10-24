@@ -15,6 +15,31 @@ internal static class EspnJson
     public static IEnumerable<JsonElement> Array(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array ? value.EnumerateArray() : [];
 
+    public static bool Bool(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
+
+    public static string TeamAbbreviation(JsonElement withTeam) =>
+        withTeam.TryGetProperty("team", out var team) ? Str(team, "abbreviation") ?? "" : "";
+
+    public static int Period(JsonElement element) =>
+        element.TryGetProperty("period", out var period) ? Int(period, "number") ?? 0 : 0;
+
+    public static string Clock(JsonElement element) =>
+        element.TryGetProperty("clock", out var clock) ? Str(clock, "displayValue") ?? "" : "";
+
+    /// <summary>Prefers ESPN's dark-background logo variant, since the app is dark-themed.</summary>
+    public static string? DarkLogo(JsonElement team)
+    {
+        var logos = Array(team, "logos").ToList();
+        var dark = logos.FirstOrDefault(l => Array(l, "rel").Any(r => r.GetString() == "dark"));
+        if (dark.ValueKind == JsonValueKind.Object)
+        {
+            return Str(dark, "href");
+        }
+
+        return logos.Count > 0 ? Str(logos[0], "href") : Str(team, "logo")?.Replace("/500/", "/500-dark/");
+    }
+
     public static GameState ParseState(JsonElement statusType)
     {
         if (statusType.TryGetProperty("completed", out var completed) && completed.ValueKind == JsonValueKind.True)

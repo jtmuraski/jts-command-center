@@ -1,6 +1,7 @@
-@* One football game: scorebug and line score, then (as available) pregame matchup, scoring plays, win
-   probability, team stats, leaders, box score, play-by-play, game info, and injuries. On wide screens the
-   cards sit in two columns; on narrow screens the columns dissolve and cards stack by their order class. *@
+@* One game (football, baseball or hockey): scorebug and line score, then (as available) pregame matchup,
+   scoring plays, win probability, team stats, leaders, box score, play-by-play, game info, and injuries.
+   On wide screens the cards sit in two columns; on narrow screens the columns dissolve and cards stack by
+   their order class. *@
 
 <section class="scorebug">
     <div class="matchup">
@@ -38,7 +39,16 @@
                         {
                             <th scope="col">@label</th>
                         }
-                        <th scope="col" class="total">T</th>
+                        @if (IsBaseball)
+                        {
+                            <th scope="col" class="total">R</th>
+                            <th scope="col" class="total">H</th>
+                            <th scope="col" class="total">E</th>
+                        }
+                        else
+                        {
+                            <th scope="col" class="total">T</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
@@ -48,9 +58,14 @@
                             <th scope="row">@team.Abbreviation</th>
                             @for (var i = 0; i < Game.PeriodLabels.Count; i++)
                             {
-                                <td>@(i < team.Linescores.Count ? team.Linescores[i] : "")</td>
+                                <td>@(i < team.Linescores.Count ? team.Linescores[i] : IsBaseball && Game.State == GameState.Final ? "X" : "")</td>
                             }
                             <td class="total">@team.Score</td>
+                            @if (IsBaseball)
+                            {
+                                <td class="total">@team.Hits</td>
+                                <td class="total">@team.Errors</td>
+                            }
                         </tr>
                     }
                 </tbody>
@@ -89,11 +104,26 @@
                             </div>
                         }
 
+                        @if (pregame.Starters.Count > 0)
+                        {
+                            <h3 class="sub-title">@(IsBaseball ? "Probable pitchers" : "Probable goalies")</h3>
+                            <ul class="leaders">
+                                @foreach (var starter in pregame.Starters)
+                                {
+                                    <li>
+                                        <span class="leader-team">@starter.TeamAbbreviation</span>
+                                        <span class="leader-name">@starter.Name</span>
+                                        <span class="leader-value">@starter.Summary</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+
                         @if (pregame.Line is { } line)
                         {
                             <h3 class="sub-title">Line@(line.Provider.Length > 0 ? $" · {line.Provider}" : "")</h3>
                             <dl class="line">
-                                @if (line.Details is not null)
+                                @if (line.Details is not null && IsFootball)
                                 {
                                     <div><dt>Spread</dt><dd>@line.Details</dd></div>
                                 }
@@ -135,11 +165,11 @@
         @if (Game.ScoringPlays.Count > 0)
         {
             <div class="slot o-2">
-                <DashboardCard Title="Scoring plays">
+                <DashboardCard Title="@(IsHockey ? "Goals" : "Scoring plays")">
                     <ChildContent>
                         @foreach (var quarter in Game.ScoringPlays.GroupBy(p => p.Period))
                         {
-                            <h3 class="sub-title">@PeriodName(quarter.Key)</h3>
+                            <h3 class="sub-title">@Game.PeriodName(quarter.Key)</h3>
                             <ul class="scoring">
                                 @foreach (var play in quarter)
                                 {
@@ -169,7 +199,7 @@
                 <DashboardCard Title="Win probability">
                     <ChildContent>
                         <WinProbabilityChart Points="Game.WinProbability" Away="@Game.Away.Abbreviation" Home="@Game.Home.Abbreviation"
-                                             IsFinal="Game.State == GameState.Final" />
+                                             IsFinal="Game.State == GameState.Final" PeriodLabel="Game.PeriodShort" />
                     </ChildContent>
                 </DashboardCard>
             </div>
@@ -215,6 +245,10 @@
                                                     {
                                                         <span class="jersey">#@player.Jersey</span>
                                                     }
+                                                    @if (player.Detail is not null)
+                                                    {
+                                                        <span class="jersey">@player.Detail</span>
+                                                    }
                                                 </th>
                                                 @foreach (var value in player.Stats)
                                                 {
@@ -250,7 +284,7 @@
                     <button class="plays-toggle" type="button" aria-expanded="@(playsOpen ? "true" : "false")" aria-controls="play-by-play"
                             @onclick="() => playsOpen = !playsOpen">
                         <span class="plays-title">Play-by-play</span>
-                        <span class="plays-count">@Game.PlayCount plays · @Game.Drives.Count drives</span>
+                        <span class="plays-count">@PlaysSummary</span>
                         <svg class="chevron" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
                     </button>
 
@@ -258,11 +292,11 @@
                     {
                         <div id="play-by-play">
                             <div class="filters" role="group" aria-label="Filter plays">
-                                @foreach (var filter in Enum.GetValues<PlayFilter>())
+                                @foreach (var filter in Filters)
                                 {
-                                    <button type="button" class="chip @(playFilter == filter ? "selected" : "")" aria-pressed="@(playFilter == filter ? "true" : "false")"
+                                    <button type="button" class="chip @(PlayFilterNow == filter ? "selected" : "")" aria-pressed="@(PlayFilterNow == filter ? "true" : "false")"
                                             @onclick="() => playFilter = filter">
-                                        @FilterLabel(filter)
+                                        @filter.Label
                                     </button>
                                 }
                             </div>
@@ -270,7 +304,7 @@
                             @{ var shown = 0; }
                             @foreach (var drive in Game.Drives)
                             {
-                                var plays = drive.Plays.Where(Matches).ToList();
+                                var plays = drive.Plays.Where(PlayFilterNow.Matches).ToList();
                                 if (plays.Count == 0)
                                 {
                                     continue;
@@ -283,7 +317,10 @@
                                         {
                                             <img src="@logo" alt="" width="22" height="22" loading="lazy" />
                                         }
-                                        <span class="drive-team">@drive.TeamAbbreviation</span>
+                                        @if (drive.TeamAbbreviation.Length > 0)
+                                        {
+                                            <span class="drive-team">@drive.TeamAbbreviation</span>
+                                        }
                                         <span class="drive-result">@drive.Result</span>
                                         <span class="drive-summary">
                                             @drive.Summary
@@ -292,13 +329,16 @@
                                                 <span> · @drive.StartPosition@(drive.EndPosition is null ? "" : $" → {drive.EndPosition}")</span>
                                             }
                                         </span>
-                                        <span class="drive-start">@PeriodShort(drive.StartPeriod) @drive.StartClock</span>
+                                        @if (IsFootball)
+                                        {
+                                            <span class="drive-start">@Game.PeriodShort(drive.StartPeriod) @drive.StartClock</span>
+                                        }
                                     </div>
                                     <ol class="plays">
                                         @foreach (var play in plays)
                                         {
                                             <li class="@PlayClass(play)">
-                                                <span class="play-time">@PeriodShort(play.Period) @play.Clock</span>
+                                                <span class="play-time">@PlayTime(play)</span>
                                                 <span class="play-body">
                                                     @if (play.DownDistance is not null)
                                                     {
@@ -331,8 +371,8 @@
         @if (Game.TeamStats.Count > 0)
         {
             <div class="slot o-4">
-                @* Before kickoff ESPN's team stats are season per-game averages. *@
-                <DashboardCard Title="@(Game.State == GameState.Scheduled ? "Season averages" : "Team stats")">
+                @* Before the game ESPN's team stats are season figures (per-game averages for football). *@
+                <DashboardCard Title="@(Game.State != GameState.Scheduled ? "Team stats" : IsFootball ? "Season averages" : "Season stats")">
                     <ChildContent>
                         <div class="compare-head">
                             <span>@Game.Away.Abbreviation</span>
@@ -415,7 +455,7 @@
                                 <dt>Officials</dt>
                                 <dd>
                                     <ul class="officials">
-                                        @foreach (var official in Game.Info.Officials.OrderBy(o => o.Position == "Referee" ? 0 : 1))
+                                        @foreach (var official in Game.Info.Officials.OrderBy(o => o.Position is "Referee" or "Home Plate Umpire" ? 0 : 1))
                                         {
                                             <li><span>@official.Name</span> <span class="position">@official.Position</span></li>
                                         }
@@ -460,11 +500,53 @@
     /// <summary>Team abbreviations to highlight (and to open the box score on), e.g. MIN and CIN.</summary>
     [Parameter] public IReadOnlyCollection<string> FollowedTeams { get; set; } = [];
 
-    private enum PlayFilter { All, Scoring, Turnovers, BigPlays, ThirdAndFourth, Penalties }
+    private sealed record PlayFilter(string Label, Func<Play, bool> Matches);
+
+    private static readonly PlayFilter AllPlays = new("All", _ => true);
+
+    private static readonly PlayFilter[] FootballFilters =
+    [
+        AllPlays,
+        new("Scoring", p => p.IsScoring),
+        new("Turnovers", p => p.IsTurnover),
+        new("Big plays (20+)", p => p.Yards is >= 20),
+        new("3rd & 4th down", p => p.DownDistance is string d && (d.StartsWith("3rd") || d.StartsWith("4th"))),
+        new("Penalties", p => p.IsPenalty),
+    ];
+
+    private static readonly PlayFilter[] BaseballFilters =
+    [
+        AllPlays,
+        new("Scoring", p => p.IsScoring),
+        new("Hits", p => BaseballPlays.IsHit(p.Type)),
+        new("Pitching changes", p => p.Type == BaseballPlays.PitchingChange),
+    ];
+
+    private static readonly PlayFilter[] HockeyFilters =
+    [
+        AllPlays,
+        new("Goals", p => p.IsScoring),
+        new("Shots on goal", p => p.Type is "Shot" or "Goal"),
+        new("Penalties", p => p.IsPenalty),
+    ];
 
     private string? boxTeam;
     private bool playsOpen;
-    private PlayFilter playFilter;
+    private PlayFilter? playFilter;
+
+    private bool IsFootball => SportSlug.Is(Game.Sport, SportSlug.Football);
+    private bool IsBaseball => SportSlug.Is(Game.Sport, SportSlug.Baseball);
+    private bool IsHockey => SportSlug.Is(Game.Sport, SportSlug.Hockey);
+
+    private PlayFilter[] Filters => IsBaseball ? BaseballFilters : IsHockey ? HockeyFilters : FootballFilters;
+
+    // A filter picked for another sport's game (the component is reused across pages) falls back to All.
+    private PlayFilter PlayFilterNow => playFilter is not null && Filters.Contains(playFilter) ? playFilter : AllPlays;
+
+    private string PlaysSummary =>
+        IsBaseball ? $"{Game.PlayCount} plays · {Game.Drives.Select(d => d.StartPeriod).DefaultIfEmpty().Max()} innings"
+        : IsHockey ? $"{Game.PlayCount} events · {Game.Drives.Count} periods"
+        : $"{Game.PlayCount} plays · {Game.Drives.Count} drives";
 
     // Open the box score on a followed team when one is playing, otherwise the away team.
     private string BoxTeam => boxTeam
@@ -481,7 +563,7 @@
             <span class="team-name">
                 <span class="full">@team.ShortName</span>
                 <span class="abbr">@team.Abbreviation</span>
-                @if (team.HasPossession && Game.State == GameState.Live)
+                @if (team.HasPossession && Game.State == GameState.Live && IsFootball)
                 {
                     <span class="possession" title="Has the ball" aria-label="Has the ball"></span>
                 }
@@ -498,30 +580,19 @@
 
     private IEnumerable<string> MetaParts()
     {
-        if (Game.Week is int week)
+        if (Game.Week is int week && IsFootball)
         {
             yield return Game.SeasonType == 3 ? "Postseason" : $"Week {week}";
         }
+        if (Game.Note is not null) yield return Game.Note;
         if (Game.Info.Venue is not null) yield return Game.Info.Venue;
         if (Game.Info.Broadcast is not null) yield return Game.Info.Broadcast;
     }
 
-    private static string PeriodName(int period) => period switch
-    {
-        1 => "1st quarter",
-        2 => "2nd quarter",
-        3 => "3rd quarter",
-        4 => "4th quarter",
-        5 => "Overtime",
-        _ => $"Overtime {period - 4}"
-    };
-
-    private static string PeriodShort(int period) => period switch
-    {
-        <= 4 => $"Q{Math.Max(period, 1)}",
-        5 => "OT",
-        _ => $"OT{period - 4}"
-    };
+    // Baseball plays show the outs after the play; the half-inning is the group's heading.
+    private string PlayTime(Play play) =>
+        IsBaseball ? play.Outs switch { null => "", 0 => "0 outs", 1 => "1 out", var outs => $"{outs} outs" }
+        : $"{Game.PeriodShort(play.Period)} {play.Clock}";
 
     /// <summary>-1 when the away value is better, 1 when the home value is, 0 when even or not comparable.</summary>
     private static int Better(TeamStatLine stat)
@@ -537,23 +608,6 @@
 
     private IEnumerable<string> LeaderCategories() =>
         Game.Leaders.SelectMany(t => t.Leaders.Select(l => l.Category)).Distinct();
-
-    private bool Matches(Play play) => playFilter switch
-    {
-        PlayFilter.Scoring => play.IsScoring,
-        PlayFilter.Turnovers => play.IsTurnover,
-        PlayFilter.BigPlays => play.Yards is >= 20,
-        PlayFilter.ThirdAndFourth => play.DownDistance is string d && (d.StartsWith("3rd") || d.StartsWith("4th")),
-        PlayFilter.Penalties => play.IsPenalty,
-        _ => true
-    };
-
-    private static string FilterLabel(PlayFilter filter) => filter switch
-    {
-        PlayFilter.BigPlays => "Big plays (20+)",
-        PlayFilter.ThirdAndFourth => "3rd & 4th down",
-        _ => filter.ToString()
-    };
 
     private static string PlayClass(Play play) =>
         play.IsScoring ? "scoring-play" : play.IsTurnover ? "turnover" : play.IsPenalty ? "penalty" : "";

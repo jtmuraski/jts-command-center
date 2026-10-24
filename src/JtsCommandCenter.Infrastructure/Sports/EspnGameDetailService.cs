@@ -16,11 +16,13 @@ public sealed class EspnGameDetailService(
     IOptions<SportsOptions> sportsOptions,
     ILogger<EspnGameDetailService> logger) : IGameDetailService
 {
-    private const int RegulationPeriods = 4;
-
-    // Box score categories in the order a football fan reads them; anything unknown goes after these.
+    // Box score categories in the order a fan reads them; anything unknown goes after these.
     private static readonly string[] CategoryOrder =
-        ["passing", "rushing", "receiving", "defensive", "interceptions", "fumbles", "kickReturns", "puntReturns", "kicking", "punting"];
+    [
+        "passing", "rushing", "receiving", "defensive", "interceptions", "fumbles", "kickReturns", "puntReturns", "kicking", "punting",
+        "batting", "pitching",
+        "forwards", "defenses", "goalies"
+    ];
 
     private static readonly Dictionary<string, string> CategoryTitles = new()
     {
@@ -34,11 +36,27 @@ public sealed class EspnGameDetailService(
         ["puntReturns"] = "Punt Returns",
         ["kicking"] = "Kicking",
         ["punting"] = "Punting",
+        ["batting"] = "Batting",
+        ["pitching"] = "Pitching",
+        ["forwards"] = "Forwards",
+        ["defenses"] = "Defense",
+        ["goalies"] = "Goalies",
+    };
+
+    // ESPN's hockey box score has ~20 columns per skater; these are the ones worth the width.
+    private static readonly Dictionary<string, string[]> KeptColumns = new()
+    {
+        ["forwards"] = ["G", "A", "+/-", "S", "HT", "BS", "PIM", "TOI", "SHFT", "FO%"],
+        ["defenses"] = ["G", "A", "+/-", "S", "HT", "BS", "PIM", "TOI", "SHFT"],
+        ["goalies"] = ["SA", "GA", "SV", "SV%", "ESSV", "PPSV", "SHSV", "TOI"],
     };
 
     // Team stats where the smaller number is the better one (drives the comparison bars).
     private static readonly HashSet<string> LowerIsBetter =
-        ["turnovers", "fumblesLost", "interceptions", "totalPenaltiesYards", "sacksYardsLost"];
+    [
+        "turnovers", "fumblesLost", "interceptions", "totalPenaltiesYards", "sacksYardsLost",
+        "giveaways", "penalties", "penaltyMinutes", "avgGoalsAgainst", "avgShotsAgainst", "powerPlayGoalsAgainst", "shortHandedGoalsAgainst"
+    ];
 
     // Play types that carry a down-and-distance but aren't plays from scrimmage.
     private static readonly string[] NonSnapTypes = ["Timeout", "End Period", "End of Half", "End of Game", "Two-minute warning"];
@@ -66,7 +84,7 @@ public sealed class EspnGameDetailService(
 
         var url = $"apis/site/v2/sports/{leagueOptions.Sport}/{leagueOptions.League}/summary?event={Uri.EscapeDataString(eventId)}";
         using var doc = await http.GetJsonAsync(url, cancellationToken);
-        var game = Parse(doc.RootElement, eventId);
+        var game = Parse(doc.RootElement, eventId, leagueOptions.Sport.ToLowerInvariant());
 
         var ttl = game.State switch
         {
@@ -78,7 +96,7 @@ public sealed class EspnGameDetailService(
         return game;
     }
 
-    private GameDetail Parse(JsonElement root, string eventId)
+    private GameDetail Parse(JsonElement root, string eventId, string sport)
     {
         var header = root.GetProperty("header");
         var competition = Array(header, "competitions").First();
@@ -94,31 +112,59 @@ public sealed class EspnGameDetailService(
         var start = DateTimeOffset.Parse(Str(competition, "date")!, CultureInfo.InvariantCulture);
         var timeValid = !competition.TryGetProperty("timeValid", out var tv) || tv.ValueKind != JsonValueKind.False;
         var seasonType = header.TryGetProperty("season", out var season) ? Int(season, "type") ?? 2 : 2;
-
-        var drives = ParseDrives(root);
         var started = state is GameState.Live or GameState.Final;
+
+        // Football has drives and a scoring summary; baseball and hockey only have a flat list of plays,
+        // which is grouped into half-innings or periods here.
+        var (drives, scoringPlays) = sport switch
+        {
+            SportSlug.Baseball => EspnBaseballPlays.Parse(root, away, home),
+            SportSlug.Hockey => EspnHockeyPlays.Parse(root, away, home, seasonType),
+            _ => (ParseDrives(root), ParseScoringPlays(root))
+        };
 
         return new GameDetail(
             Str(header, "id") ?? eventId,
+            sport,
             state,
             Str(status, "shortDetail") ?? Str(status, "description") ?? "",
             TimeZoneInfo.ConvertTime(start, zone).DateTime,
             !timeValid,
             seasonType,
             Int(header, "week"),
+            SeriesNote(header, competition),
             away,
             home,
-            PeriodLabels(Math.Max(away.Linescores.Count, home.Linescores.Count)),
+            PeriodLabels(sport, seasonType, Math.Max(away.Linescores.Count, home.Linescores.Count)),
             ParseInfo(root, competition),
-            ParseTeamStats(root, away.Abbreviation),
+            sport == SportSlug.Baseball ? EspnBaseballPlays.TeamStats(root, away.Abbreviation, started) : ParseTeamStats(root, away.Abbreviation),
             ParsePlayerStats(root),
-            ParseScoringPlays(root),
+            scoringPlays,
             drives,
             ParseWinProbability(root, drives),
             ParseLeaders(root),
             ParseInjuries(root),
-            started ? null : ParsePregame(root, away.Id, home.Id),
+            started ? null : ParsePregame(root, sport, awayJson, homeJson),
             TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, zone).DateTime);
+    }
+
+    /// <summary>
+    /// ESPN's game note and series standing, e.g. "ALCS - Game 6 · Series tied 3-3" or "CGY leads series 1-0"
+    /// (a playoff series is preferred over the season series).
+    /// </summary>
+    private static string? SeriesNote(JsonElement header, JsonElement competition)
+    {
+        var series = Array(competition, "series").ToList();
+        var pick = series.FirstOrDefault(s => Str(s, "type") is "playoff" or "current");
+        if (pick.ValueKind != JsonValueKind.Object)
+        {
+            pick = series.FirstOrDefault();
+        }
+
+        var parts = new[] { Str(header, "gameNote"), pick.ValueKind == JsonValueKind.Object ? Str(pick, "summary") : null }
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .ToList();
+        return parts.Count > 0 ? string.Join(" · ", parts) : null;
     }
 
     private static GameTeam ParseTeam(JsonElement competitor)
@@ -138,14 +184,20 @@ public sealed class EspnGameDetailService(
                 .Select(l => int.TryParse(Str(l, "displayValue"), out var points) ? points : 0)
                 .ToList(),
             Bool(competitor, "winner"),
-            Bool(competitor, "possession"));
+            Bool(competitor, "possession"),
+            Int(competitor, "hits"),
+            Int(competitor, "errors"));
     }
 
-    private static IReadOnlyList<string> PeriodLabels(int periods) =>
-        Enumerable.Range(1, periods)
-            .Select(p => p <= RegulationPeriods ? p.ToString(CultureInfo.InvariantCulture)
-                : p == RegulationPeriods + 1 ? "OT" : $"OT{p - RegulationPeriods}")
-            .ToList();
+    // Once a game starts, baseball shows all nine innings and hockey all three periods, as a scorecard would.
+    private static IReadOnlyList<string> PeriodLabels(string sport, int seasonType, int periods)
+    {
+        var shown = periods == 0 ? 0
+            : sport == SportSlug.Baseball ? Math.Max(periods, 9)
+            : sport == SportSlug.Hockey ? Math.Max(periods, 3)
+            : periods;
+        return Enumerable.Range(1, shown).Select(p => GamePeriods.Column(sport, seasonType, p)).ToList();
+    }
 
     private static GameInfo ParseInfo(JsonElement root, JsonElement competition)
     {
@@ -279,7 +331,20 @@ public sealed class EspnGameDetailService(
             var abbreviation = TeamAbbreviation(team);
             foreach (var category in Array(team, "statistics"))
             {
-                var name = Str(category, "name") ?? "";
+                // Baseball names its categories by "type" (batting, pitching) rather than "name".
+                var name = Str(category, "name") ?? Str(category, "type") ?? "";
+                var labels = Array(category, "labels").Select(l => l.GetString() ?? "").ToList();
+
+                // Indexes of the columns to show, in the kept list's order, or all of them.
+                var keep = KeptColumns.TryGetValue(name, out var kept)
+                    ? kept.Select(label => labels.IndexOf(label)).Where(i => i >= 0).ToList()
+                    : Enumerable.Range(0, labels.Count).ToList();
+                List<string> Pick(IEnumerable<string> values)
+                {
+                    var all = values.ToList();
+                    return keep.Where(i => i < all.Count).Select(i => all[i]).ToList();
+                }
+
                 var players = Array(category, "athletes")
                     .Select(a =>
                     {
@@ -287,7 +352,8 @@ public sealed class EspnGameDetailService(
                         return new PlayerStatRow(
                             Str(athlete, "displayName") ?? "",
                             Str(athlete, "jersey"),
-                            Array(a, "stats").Select(s => s.GetString() ?? "").ToList());
+                            Pick(Array(a, "stats").Select(s => s.GetString() ?? "")),
+                            PlayerDetail(a, name));
                     })
                     .ToList();
 
@@ -296,12 +362,12 @@ public sealed class EspnGameDetailService(
                     continue;
                 }
 
-                var totals = Array(category, "totals").Select(t => t.GetString() ?? "").ToList();
+                var totals = Pick(Array(category, "totals").Select(t => t.GetString() ?? ""));
                 tables.Add(new PlayerStatTable(
                     abbreviation,
                     name,
                     CategoryTitles.GetValueOrDefault(name) ?? Str(category, "text") ?? name,
-                    Array(category, "labels").Select(l => l.GetString() ?? "").ToList(),
+                    Pick(labels),
                     players,
                     totals.Count > 0 ? totals : null));
             }
@@ -310,6 +376,22 @@ public sealed class EspnGameDetailService(
         return tables
             .OrderBy(t => System.Array.IndexOf(CategoryOrder, t.Category) is var i and >= 0 ? i : CategoryOrder.Length)
             .ToList();
+    }
+
+    /// <summary>Baseball: a pitcher's decision ("W, 2-0", "S, 4") or a batter's position ("LF", "PH").</summary>
+    private static string? PlayerDetail(JsonElement entry, string category)
+    {
+        // Batters' notes explain substitutions ("a-Grounded out for Halpin in the 7th."), too long for here.
+        var decision = Array(entry, "notes")
+            .Where(n => Str(n, "type") == "pitchingDecision")
+            .Select(n => Str(n, "text"))
+            .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+        if (decision is not null)
+        {
+            return decision;
+        }
+
+        return category == "batting" && entry.TryGetProperty("position", out var position) ? Str(position, "abbreviation") : null;
     }
 
     private static List<ScoringPlay> ParseScoringPlays(JsonElement root) =>
@@ -457,8 +539,15 @@ public sealed class EspnGameDetailService(
             .Where(t => t.Injuries.Count > 0)
             .ToList();
 
-    private static Pregame? ParsePregame(JsonElement root, string awayId, string homeId)
+    private static Pregame? ParsePregame(JsonElement root, string sport, JsonElement awayJson, JsonElement homeJson)
     {
+        List<ProbableStarter> starters = sport switch
+        {
+            SportSlug.Baseball => EspnBaseballPlays.Starters(awayJson, homeJson),
+            SportSlug.Hockey => EspnHockeyPlays.Starters(root, TeamAbbreviation(awayJson), TeamAbbreviation(homeJson)),
+            _ => []
+        };
+
         double? homeChance = null, awayChance = null;
         if (root.TryGetProperty("predictor", out var predictor) && predictor.ValueKind == JsonValueKind.Object)
         {
@@ -490,7 +579,9 @@ public sealed class EspnGameDetailService(
                     .ToList()))
             .ToList();
 
-        return homeChance is null && line is null && form.Count == 0 ? null : new Pregame(homeChance, awayChance, line, form);
+        return homeChance is null && line is null && form.Count == 0 && starters.Count == 0
+            ? null
+            : new Pregame(homeChance, awayChance, line, form, starters);
     }
 
     private static double? Projection(JsonElement predictor, string side) =>
@@ -503,29 +594,4 @@ public sealed class EspnGameDetailService(
         pick.TryGetProperty(side, out var odds) && odds.TryGetProperty("moneyLine", out var ml) && ml.TryGetDouble(out var value)
             ? (int)value
             : null;
-
-    private static string TeamAbbreviation(JsonElement withTeam) =>
-        withTeam.TryGetProperty("team", out var team) ? Str(team, "abbreviation") ?? "" : "";
-
-    private static int Period(JsonElement element) =>
-        element.TryGetProperty("period", out var period) ? Int(period, "number") ?? 0 : 0;
-
-    private static string Clock(JsonElement element) =>
-        element.TryGetProperty("clock", out var clock) ? Str(clock, "displayValue") ?? "" : "";
-
-    private static bool Bool(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
-
-    /// <summary>Prefers ESPN's dark-background logo variant, since the app is dark-themed.</summary>
-    private static string? DarkLogo(JsonElement team)
-    {
-        var logos = Array(team, "logos").ToList();
-        var dark = logos.FirstOrDefault(l => Array(l, "rel").Any(r => r.GetString() == "dark"));
-        if (dark.ValueKind == JsonValueKind.Object)
-        {
-            return Str(dark, "href");
-        }
-
-        return logos.Count > 0 ? Str(logos[0], "href") : Str(team, "logo")?.Replace("/500/", "/500-dark/");
-    }
 }

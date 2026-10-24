@@ -1,0 +1,1821 @@
+{
+ "header": {
+  "id": "401908028",
+  "season": {
+   "year": 2026,
+   "current": true,
+   "type": 3
+  },
+  "gameNote": "ALCS - Game 6",
+  "competitions": [
+   {
+    "date": "2026-10-20T00:00Z",
+    "status": {
+     "type": {
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "shortDetail": "Final"
+     }
+    },
+    "competitors": [
+     {
+      "homeAway": "home",
+      "winner": true,
+      "score": "7",
+      "hits": 7,
+      "errors": 0,
+      "team": {
+       "id": "30",
+       "abbreviation": "TB",
+       "displayName": "Tampa Bay Rays",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500-dark/tb.png",
+         "rel": [
+          "full",
+          "dark"
+         ]
+        }
+       ]
+      },
+      "linescores": [
+       {
+        "displayValue": "0"
+       },
+       {
+        "displayValue": "2"
+       },
+       {
+        "displayValue": "1"
+       },
+       {
+        "displayValue": "0"
+       },
+       {
+        "displayValue": "0"
+       },
+       {
+        "displayValue": "0"
+       },
+       {
+        "displayValue": "2"
+       },
+       {
+        "displayValue": "2"
+       }
+      ],
+      "record": [
+       {
+        "type": "total",
+        "summary": "98-64",
+        "displayValue": "98-64"
+       }
+      ]
+     },
+     {
+      "homeAway": "away",
+      "winner": false,
+      "score": "3",
+      "hits": 7,
+      "errors": 0,
+      "team": {
+       "id": "5",
+       "abbreviation": "CLE",
+       "displayName": "Cleveland Guardians",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500-dark/cle.png",
+         "rel": [
+          "full",
+          "dark"
+         ]
+        }
+       ]
+      },
+      "linescores": [
+       {
+        "displayValue": "0"
+       },
+       {
+        "displayValue": "0"
+       },
+       {
+        "displayValue": "0"
+       },
+       {
+        "displayValue": "0"
+       },
+       {
+        "displayValue": "0"
+       },
+       {
+        "displayValue": "1"
+       },
+       {
+        "displayValue": "0"
+       },
+       {
+        "displayValue": "2"
+       },
+       {
+        "displayValue": "0"
+       }
+      ],
+      "record": [
+       {
+        "type": "total",
+        "summary": "85-77",
+        "displayValue": "85-77"
+       }
+      ]
+     }
+    ],
+    "series": [
+     {
+      "type": "current",
+      "summary": "Series tied 3-3"
+     },
+     {
+      "type": "season",
+      "summary": "TB wins series 5-1"
+     },
+     {
+      "type": "playoff",
+      "summary": "TB wins series 4-2"
+     }
+    ]
+   }
+  ]
+ },
+ "boxscore": {
+  "teams": [
+   {
+    "team": {
+     "abbreviation": "CLE"
+    },
+    "homeAway": "away",
+    "statistics": [
+     {
+      "name": "batting",
+      "stats": [
+       {
+        "name": "strikeouts",
+        "displayValue": "4"
+       },
+       {
+        "name": "RBIs",
+        "displayValue": "3"
+       },
+       {
+        "name": "hits",
+        "displayValue": "7"
+       },
+       {
+        "name": "walks",
+        "displayValue": "5"
+       },
+       {
+        "name": "homeRuns",
+        "displayValue": "0"
+       },
+       {
+        "name": "runnersLeftOnBase",
+        "displayValue": "18"
+       }
+      ]
+     },
+     {
+      "name": "pitching",
+      "stats": [
+       {
+        "name": "strikeouts",
+        "displayValue": "3"
+       },
+       {
+        "name": "hits",
+        "displayValue": "7"
+       },
+       {
+        "name": "walks",
+        "displayValue": "6"
+       },
+       {
+        "name": "homeRuns",
+        "displayValue": "2"
+       },
+       {
+        "name": "RBIs",
+        "displayValue": "7"
+       }
+      ]
+     },
+     {
+      "name": "fielding",
+      "stats": [
+       {
+        "name": "errors",
+        "displayValue": "0"
+       },
+       {
+        "name": "hits",
+        "displayValue": "0"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "team": {
+     "abbreviation": "TB"
+    },
+    "homeAway": "home",
+    "statistics": [
+     {
+      "name": "batting",
+      "stats": [
+       {
+        "name": "strikeouts",
+        "displayValue": "3"
+       },
+       {
+        "name": "RBIs",
+        "displayValue": "7"
+       },
+       {
+        "name": "hits",
+        "displayValue": "7"
+       },
+       {
+        "name": "walks",
+        "displayValue": "6"
+       },
+       {
+        "name": "homeRuns",
+        "displayValue": "2"
+       },
+       {
+        "name": "runnersLeftOnBase",
+        "displayValue": "19"
+       }
+      ]
+     },
+     {
+      "name": "pitching",
+      "stats": [
+       {
+        "name": "strikeouts",
+        "displayValue": "4"
+       },
+       {
+        "name": "hits",
+        "displayValue": "7"
+       },
+       {
+        "name": "walks",
+        "displayValue": "5"
+       },
+       {
+        "name": "homeRuns",
+        "displayValue": "0"
+       },
+       {
+        "name": "RBIs",
+        "displayValue": "3"
+       }
+      ]
+     },
+     {
+      "name": "fielding",
+      "stats": [
+       {
+        "name": "errors",
+        "displayValue": "0"
+       },
+       {
+        "name": "hits",
+        "displayValue": "0"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "players": [
+   {
+    "team": {
+     "abbreviation": "CLE"
+    },
+    "statistics": [
+     {
+      "type": "batting",
+      "labels": [
+       "H-AB",
+       "AB",
+       "R",
+       "H",
+       "RBI",
+       "HR",
+       "BB",
+       "K",
+       "#P",
+       "AVG",
+       "OBP",
+       "SLG"
+      ],
+      "totals": [
+       "7-33",
+       "33",
+       "3",
+       "7",
+       "3",
+       "0",
+       "5",
+       "4",
+       "136",
+       "",
+       "",
+       ""
+      ],
+      "athletes": [
+       {
+        "position": {
+         "abbreviation": "CF"
+        },
+        "stats": [
+         "1-4",
+         "4",
+         "0",
+         "1",
+         "0",
+         "0",
+         "1",
+         "0",
+         "21",
+         ".244",
+         ".320",
+         ".244"
+        ],
+        "athlete": {
+         "displayName": "Steven Kwan"
+        }
+       },
+       {
+        "position": {
+         "abbreviation": "3B"
+        },
+        "stats": [
+         "0-4",
+         "4",
+         "0",
+         "0",
+         "0",
+         "0",
+         "1",
+         "0",
+         "15",
+         ".293",
+         ".396",
+         ".512"
+        ],
+        "athlete": {
+         "displayName": "Jose Ramirez"
+        }
+       }
+      ]
+     },
+     {
+      "type": "pitching",
+      "labels": [
+       "IP",
+       "H",
+       "R",
+       "ER",
+       "BB",
+       "K",
+       "HR",
+       "PC-ST",
+       "ERA",
+       "PC"
+      ],
+      "totals": [
+       "8.0",
+       "7",
+       "7",
+       "7",
+       "6",
+       "3",
+       "2",
+       "124-71",
+       "",
+       "124"
+      ],
+      "athletes": [
+       {
+        "position": {
+         "abbreviation": "P"
+        },
+        "notes": [
+         {
+          "type": "pitchingDecision",
+          "text": "L, 0-1"
+         }
+        ],
+        "stats": [
+         "1.0",
+         "1",
+         "1",
+         "1",
+         "0",
+         "0",
+         "0",
+         "9-6",
+         "1.04",
+         "9"
+        ],
+        "athlete": {
+         "displayName": "Shawn Armstrong"
+        }
+       },
+       {
+        "position": {
+         "abbreviation": "P"
+        },
+        "stats": [
+         "0.2",
+         "1",
+         "1",
+         "1",
+         "1",
+         "0",
+         "0",
+         "18-10",
+         "5.06",
+         "18"
+        ],
+        "athlete": {
+         "displayName": "Tim Herrin"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "team": {
+     "abbreviation": "TB"
+    },
+    "statistics": [
+     {
+      "type": "batting",
+      "labels": [
+       "H-AB",
+       "AB",
+       "R",
+       "H",
+       "RBI",
+       "HR",
+       "BB",
+       "K",
+       "#P",
+       "AVG",
+       "OBP",
+       "SLG"
+      ],
+      "totals": [
+       "7-30",
+       "30",
+       "7",
+       "7",
+       "7",
+       "2",
+       "6",
+       "3",
+       "124",
+       "",
+       "",
+       ""
+      ],
+      "athletes": [
+       {
+        "position": {
+         "abbreviation": "DH"
+        },
+        "stats": [
+         "1-4",
+         "4",
+         "1",
+         "1",
+         "2",
+         "1",
+         "0",
+         "0",
+         "13",
+         ".308",
+         ".341",
+         ".564"
+        ],
+        "athlete": {
+         "displayName": "Yandy Diaz"
+        }
+       },
+       {
+        "position": {
+         "abbreviation": "1B"
+        },
+        "stats": [
+         "0-4",
+         "4",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "2",
+         "14",
+         ".257",
+         ".333",
+         ".343"
+        ],
+        "athlete": {
+         "displayName": "Jonathan Aranda"
+        }
+       }
+      ]
+     },
+     {
+      "type": "pitching",
+      "labels": [
+       "IP",
+       "H",
+       "R",
+       "ER",
+       "BB",
+       "K",
+       "HR",
+       "PC-ST",
+       "ERA",
+       "PC"
+      ],
+      "totals": [
+       "9.0",
+       "7",
+       "3",
+       "3",
+       "5",
+       "4",
+       "0",
+       "136-88",
+       "",
+       "136"
+      ],
+      "athletes": [
+       {
+        "position": {
+         "abbreviation": "P"
+        },
+        "notes": [
+         {
+          "type": "pitchingDecision",
+          "text": "W, 2-0"
+         }
+        ],
+        "stats": [
+         "5.1",
+         "5",
+         "1",
+         "1",
+         "3",
+         "3",
+         "0",
+         "84-51",
+         "1.08",
+         "84"
+        ],
+        "athlete": {
+         "displayName": "Freddy Peralta"
+        }
+       },
+       {
+        "position": {
+         "abbreviation": "P"
+        },
+        "notes": [
+         {
+          "type": "pitchingDecision",
+          "text": "H, 4"
+         }
+        ],
+        "stats": [
+         "1.2",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "17-14",
+         "0.00",
+         "17"
+        ],
+        "athlete": {
+         "displayName": "Cam Booser"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "gameInfo": {
+  "venue": {
+   "fullName": "Tropicana Field",
+   "address": {
+    "city": "St. Petersburg",
+    "state": "Florida"
+   }
+  },
+  "attendance": 40230,
+  "officials": [
+   {
+    "displayName": "Chad Fairchild",
+    "position": {
+     "displayName": "Home Plate Umpire"
+    }
+   },
+   {
+    "displayName": "Nestor  Ceja",
+    "position": {
+     "displayName": "First Base Umpire"
+    }
+   }
+  ]
+ },
+ "plays": [
+  {
+   "id": "4019080280000000059",
+   "type": {
+    "text": "Start Inning",
+    "type": "start-inning"
+   },
+   "text": "Top of the 1st inning",
+   "period": {
+    "type": "Top",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 0,
+   "summaryType": "I",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280001"
+  },
+  {
+   "id": "4019080280001060002",
+   "type": {
+    "text": "Single",
+    "type": "single",
+    "alternativeText": "Single",
+    "abbreviation": "1B"
+   },
+   "text": "Pitch 5 : Ball In Play",
+   "period": {
+    "type": "Top",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 0,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 2,
+    "strikes": 2
+   },
+   "atBatId": "4019080280001"
+  },
+  {
+   "id": "4019080280001990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Kwan reached on infield single to shortstop.",
+   "period": {
+    "type": "Top",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 0,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 2,
+    "strikes": 2
+   },
+   "atBatId": "4019080280001"
+  },
+  {
+   "id": "4019080280002030022",
+   "type": {
+    "text": "Fly Out",
+    "type": "fly-out",
+    "alternativeText": "Fly Out",
+    "abbreviation": "FLY"
+   },
+   "text": "Pitch 2 : Ball In Play",
+   "period": {
+    "type": "Top",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 0
+   },
+   "atBatId": "4019080280002"
+  },
+  {
+   "id": "4019080280002990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Ramírez flied out to left.",
+   "period": {
+    "type": "Top",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 0
+   },
+   "atBatId": "4019080280002"
+  },
+  {
+   "id": "4019080280003020022",
+   "type": {
+    "text": "Fly Out",
+    "type": "fly-out",
+    "alternativeText": "Fly Out",
+    "abbreviation": "FLY"
+   },
+   "text": "Pitch 1 : Ball In Play",
+   "period": {
+    "type": "Top",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 2,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280003"
+  },
+  {
+   "id": "4019080280003990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "DeLauter flied out to center.",
+   "period": {
+    "type": "Top",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 2,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280003"
+  },
+  {
+   "id": "4019080280004060023",
+   "type": {
+    "text": "Foul Out",
+    "type": "foul-out",
+    "alternativeText": "Foul Out",
+    "abbreviation": "FOU"
+   },
+   "text": "Pitch 5 : Ball In Play",
+   "period": {
+    "type": "Top",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 3,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 2,
+    "strikes": 2
+   },
+   "atBatId": "4019080280004"
+  },
+  {
+   "id": "4019080280004990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Adell fouled out to first.",
+   "period": {
+    "type": "Top",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 3,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 2,
+    "strikes": 2
+   },
+   "atBatId": "4019080280004"
+  },
+  {
+   "id": "4019080280100000059",
+   "type": {
+    "text": "Start Inning",
+    "type": "start-inning"
+   },
+   "text": "Bottom of the 1st inning",
+   "period": {
+    "type": "Bottom",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 0,
+   "summaryType": "I",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280101"
+  },
+  {
+   "id": "4019080280101050024",
+   "type": {
+    "text": "Ground Out",
+    "type": "ground-out",
+    "alternativeText": "Ground Out",
+    "abbreviation": "GRO"
+   },
+   "text": "Pitch 4 : Ball In Play",
+   "period": {
+    "type": "Bottom",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 2
+   },
+   "atBatId": "4019080280101"
+  },
+  {
+   "id": "4019080280101990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Díaz grounded out to shortstop.",
+   "period": {
+    "type": "Bottom",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 2
+   },
+   "atBatId": "4019080280101"
+  },
+  {
+   "id": "4019080280102020033",
+   "type": {
+    "text": "Pop Out",
+    "type": "pop-out",
+    "alternativeText": "Pop Out",
+    "abbreviation": "POP"
+   },
+   "text": "Pitch 1 : Ball In Play",
+   "period": {
+    "type": "Bottom",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 2,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280102"
+  },
+  {
+   "id": "4019080280102990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Aranda popped out to second.",
+   "period": {
+    "type": "Bottom",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 2,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280102"
+  },
+  {
+   "id": "4019080280103030033",
+   "type": {
+    "text": "Pop Out",
+    "type": "pop-out",
+    "alternativeText": "Pop Out",
+    "abbreviation": "POP"
+   },
+   "text": "Pitch 2 : Ball In Play",
+   "period": {
+    "type": "Bottom",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 3,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 0
+   },
+   "atBatId": "4019080280103"
+  },
+  {
+   "id": "4019080280103990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Hicks popped out to pitcher.",
+   "period": {
+    "type": "Bottom",
+    "number": 1
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 3,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 0
+   },
+   "atBatId": "4019080280103"
+  },
+  {
+   "id": "4019080280200000059",
+   "type": {
+    "text": "Start Inning",
+    "type": "start-inning"
+   },
+   "text": "Top of the 2nd inning",
+   "period": {
+    "type": "Top",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 0,
+   "summaryType": "I",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280201"
+  },
+  {
+   "id": "4019080280201060037",
+   "type": {
+    "text": "Strike Swinging",
+    "type": "strike-swinging",
+    "alternativeText": "Strikeout",
+    "abbreviation": "SS"
+   },
+   "text": "Pitch 5 : Strike 3 Swinging",
+   "period": {
+    "type": "Top",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 3
+   },
+   "atBatId": "4019080280201"
+  },
+  {
+   "id": "4019080280201990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Lowe struck out swinging.",
+   "period": {
+    "type": "Top",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 3
+   },
+   "atBatId": "4019080280201"
+  },
+  {
+   "id": "4019080280202070022",
+   "type": {
+    "text": "Fly Out",
+    "type": "fly-out",
+    "alternativeText": "Fly Out",
+    "abbreviation": "FLY"
+   },
+   "text": "Pitch 6 : Ball In Play",
+   "period": {
+    "type": "Top",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 2,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 2,
+    "strikes": 2
+   },
+   "atBatId": "4019080280202"
+  },
+  {
+   "id": "4019080280202990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Bazzana flied out to right.",
+   "period": {
+    "type": "Top",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 2,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 2,
+    "strikes": 2
+   },
+   "atBatId": "4019080280202"
+  },
+  {
+   "id": "4019080280203060022",
+   "type": {
+    "text": "Fly Out",
+    "type": "fly-out",
+    "alternativeText": "Fly Out",
+    "abbreviation": "FLY"
+   },
+   "text": "Pitch 5 : Ball In Play",
+   "period": {
+    "type": "Top",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 3,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 2,
+    "strikes": 2
+   },
+   "atBatId": "4019080280203"
+  },
+  {
+   "id": "4019080280203990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Bailey flied out to right.",
+   "period": {
+    "type": "Top",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 3,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 2,
+    "strikes": 2
+   },
+   "atBatId": "4019080280203"
+  },
+  {
+   "id": "4019080280300000059",
+   "type": {
+    "text": "Start Inning",
+    "type": "start-inning"
+   },
+   "text": "Bottom of the 2nd inning",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 0,
+   "summaryType": "I",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280301"
+  },
+  {
+   "id": "4019080280301030002",
+   "type": {
+    "text": "Single",
+    "type": "single",
+    "alternativeText": "Single",
+    "abbreviation": "1B"
+   },
+   "text": "Pitch 2 : Ball In Play",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 0,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 0
+   },
+   "atBatId": "4019080280301"
+  },
+  {
+   "id": "4019080280301990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Caminero singled to center.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 0,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 0
+   },
+   "atBatId": "4019080280301"
+  },
+  {
+   "id": "4019080280301990099",
+   "type": {
+    "text": "End Batter/Pitcher",
+    "type": "end-batterpitcher"
+   },
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 0,
+   "resultCount": {
+    "balls": 1,
+    "strikes": 0
+   },
+   "atBatId": "4019080280301"
+  },
+  {
+   "id": "4019080280302001157",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Herrin relieved Armstrong",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 0,
+   "summaryType": "C",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280302"
+  },
+  {
+   "id": "4019080280302060015",
+   "type": {
+    "text": "Batters Fielders Choice - Runner Out",
+    "type": "batters-fielders-choice---runner-out",
+    "alternativeText": "Fielders Choice, Runner Out",
+    "abbreviation": "BFO"
+   },
+   "text": "Pitch 5 : Ball In Play",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 3,
+    "strikes": 1
+   },
+   "atBatId": "4019080280302"
+  },
+  {
+   "id": "4019080280302990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Simpson grounded into fielder's choice to second, Caminero out at second.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 3,
+    "strikes": 1
+   },
+   "atBatId": "4019080280302"
+  },
+  {
+   "id": "4019080280303020252",
+   "type": {
+    "text": "Stolen Base",
+    "type": "stolen-base",
+    "alternativeText": "Stolen Base",
+    "abbreviation": "SB"
+   },
+   "text": "Simpson stole second.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280303"
+  },
+  {
+   "id": "4019080280303020298",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Simpson stole second.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280303"
+  },
+  {
+   "id": "4019080280303060005",
+   "type": {
+    "text": "Ball",
+    "type": "ball",
+    "alternativeText": "Walk",
+    "abbreviation": "B"
+   },
+   "text": "Pitch 5 : Ball 4",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 4,
+    "strikes": 1
+   },
+   "atBatId": "4019080280303"
+  },
+  {
+   "id": "4019080280303990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Mesa Jr. walked.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 1,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 4,
+    "strikes": 1
+   },
+   "atBatId": "4019080280303"
+  },
+  {
+   "id": "4019080280304030032",
+   "type": {
+    "text": "Line Out",
+    "type": "line-out",
+    "alternativeText": "Line Out",
+    "abbreviation": "LIN"
+   },
+   "text": "Pitch 2 : Ball In Play",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 2,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 1
+   },
+   "atBatId": "4019080280304"
+  },
+  {
+   "id": "4019080280304990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "DeLuca lined out to center, Simpson to third.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 2,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 1
+   },
+   "atBatId": "4019080280304"
+  },
+  {
+   "id": "4019080280305030252",
+   "type": {
+    "text": "Stolen Base",
+    "type": "stolen-base",
+    "alternativeText": "Stolen Base",
+    "abbreviation": "SB"
+   },
+   "text": "Mesa Jr. stole second.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 2,
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280305"
+  },
+  {
+   "id": "4019080280305030298",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Mesa Jr. stole second.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 0,
+   "outs": 2,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280305"
+  },
+  {
+   "id": "4019080280305070003",
+   "type": {
+    "text": "Double",
+    "type": "double",
+    "alternativeText": "Double",
+    "abbreviation": "2B"
+   },
+   "text": "Pitch 6 : Ball In Play",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 2,
+   "outs": 2,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 2
+   },
+   "atBatId": "4019080280305"
+  },
+  {
+   "id": "4019080280305990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Palacios doubled to right, Mesa Jr. scored and Simpson scored.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": true,
+   "awayScore": 0,
+   "homeScore": 2,
+   "outs": 2,
+   "summaryType": "S",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 2
+   },
+   "atBatId": "4019080280305"
+  },
+  {
+   "id": "4019080280305990099",
+   "type": {
+    "text": "End Batter/Pitcher",
+    "type": "end-batterpitcher"
+   },
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 2,
+   "outs": 2,
+   "resultCount": {
+    "balls": 1,
+    "strikes": 2
+   },
+   "atBatId": "4019080280305"
+  },
+  {
+   "id": "4019080280306001157",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Festa relieved Herrin",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 2,
+   "outs": 0,
+   "summaryType": "C",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 0
+   },
+   "atBatId": "4019080280306"
+  },
+  {
+   "id": "4019080280306080005",
+   "type": {
+    "text": "Ball",
+    "type": "ball",
+    "alternativeText": "Walk",
+    "abbreviation": "B"
+   },
+   "text": "Pitch 7 : Ball 4",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 2,
+   "outs": 2,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 4,
+    "strikes": 2
+   },
+   "atBatId": "4019080280306"
+  },
+  {
+   "id": "4019080280306990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Walls walked.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 2,
+   "outs": 2,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 4,
+    "strikes": 2
+   },
+   "atBatId": "4019080280306"
+  },
+  {
+   "id": "4019080280307020026",
+   "type": {
+    "text": "Hit By Pitch",
+    "type": "hit-by-pitch",
+    "alternativeText": "Hit by Pitch",
+    "abbreviation": "HBP"
+   },
+   "text": "Pitch 1 : Ball In Play",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 2,
+   "outs": 2,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 0
+   },
+   "atBatId": "4019080280307"
+  },
+  {
+   "id": "4019080280307990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Díaz hit by pitch, Walls to second, Palacios to third.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 2,
+   "outs": 2,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 1,
+    "strikes": 0
+   },
+   "atBatId": "4019080280307"
+  },
+  {
+   "id": "4019080280308040022",
+   "type": {
+    "text": "Fly Out",
+    "type": "fly-out",
+    "alternativeText": "Fly Out",
+    "abbreviation": "FLY"
+   },
+   "text": "Pitch 3 : Ball In Play",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 2,
+   "outs": 3,
+   "summaryType": "P",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 2
+   },
+   "atBatId": "4019080280308"
+  },
+  {
+   "id": "4019080280308990057",
+   "type": {
+    "text": "Play Result",
+    "type": "play-result"
+   },
+   "text": "Aranda flied out to left.",
+   "period": {
+    "type": "Bottom",
+    "number": 2
+   },
+   "scoringPlay": false,
+   "awayScore": 0,
+   "homeScore": 2,
+   "outs": 3,
+   "summaryType": "N",
+   "resultCount": {
+    "balls": 0,
+    "strikes": 2
+   },
+   "atBatId": "4019080280308"
+  }
+ ],
+ "winprobability": [
+  {
+   "homeWinPercentage": 0.475,
+   "playId": "4019080280001990057"
+  },
+  {
+   "homeWinPercentage": 0.509,
+   "playId": "4019080280002990057"
+  },
+  {
+   "homeWinPercentage": 0.542,
+   "playId": "4019080280003990057"
+  },
+  {
+   "homeWinPercentage": 0.542,
+   "playId": "4019080280004990057"
+  },
+  {
+   "homeWinPercentage": 0.544,
+   "playId": "4019080280101990057"
+  },
+  {
+   "homeWinPercentage": 0.532,
+   "playId": "4019080280102990057"
+  },
+  {
+   "homeWinPercentage": 0.532,
+   "playId": "4019080280103990057"
+  },
+  {
+   "homeWinPercentage": 0.545,
+   "playId": "4019080280201990057"
+  },
+  {
+   "homeWinPercentage": 0.557,
+   "playId": "4019080280202990057"
+  },
+  {
+   "homeWinPercentage": 0.562,
+   "playId": "4019080280203990057"
+  },
+  {
+   "homeWinPercentage": 0.598,
+   "playId": "4019080280301990057"
+  },
+  {
+   "homeWinPercentage": 0.566,
+   "playId": "4019080280302990057"
+  },
+  {
+   "homeWinPercentage": 0.598,
+   "playId": "4019080280303990057"
+  },
+  {
+   "homeWinPercentage": 0.565,
+   "playId": "4019080280304990057"
+  },
+  {
+   "homeWinPercentage": 0.772,
+   "playId": "4019080280305990057"
+  },
+  {
+   "homeWinPercentage": 0.78,
+   "playId": "4019080280306990057"
+  },
+  {
+   "homeWinPercentage": 0.796,
+   "playId": "4019080280307990057"
+  },
+  {
+   "homeWinPercentage": 0.759,
+   "playId": "4019080280308990057"
+  }
+ ]
+}
